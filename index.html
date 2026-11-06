@@ -3162,7 +3162,7 @@ function drawWeather(c){
   c.globalAlpha=1;
 }
 function draw(){
-  const c=ctx;c.setTransform(dpr,0,0,dpr,0,0);c.fillStyle='#14160f';c.fillRect(0,0,cw,ch);
+  const c=ctx;c.setTransform(dpr,0,0,dpr,0,0);c.fillStyle=G&&G.M?(G.M.snow?'#c4c6bd':G.M.g1||'#6f6c49'):'#14160f';c.fillRect(0,0,cw,ch);
   if(!G)return;
   const sx=G.shake?(Math.random()-.5)*G.shake*view.s*2:0,sy=G.shake?(Math.random()-.5)*G.shake*view.s*2:0;
   c.setTransform(dpr*view.s,0,0,dpr*view.s,dpr*(view.ox+sx),dpr*(view.oy+sy));
@@ -3398,9 +3398,9 @@ function updateInsets(){
   $('#toast').style.top=(INS.top+4)+'px';
   applyCam();
 }
-function zMin(){const vh=ch-INS.top-INS.bot;return Math.min(1,Math.min(cw/COLS,vh/ROWS)/base.s)}
+function zMin(){const vh=ch-INS.top-INS.bot;return Math.min(1,Math.max(cw/COLS,vh/ROWS)/base.s)}
 function applyCam(){
-  const s=base.s*cam.z,W=s*COLS,H=s*ROWS,vt=INS.top,vb=ch-INS.bot,vh=vb-vt;
+  cam.z=Math.max(cam.z,zMin());const s=base.s*cam.z,W=s*COLS,H=s*ROWS,vt=INS.top,vb=ch-INS.bot,vh=vb-vt;
   let ox=cam.ox==null?(cw-W)/2:cam.ox,oy=cam.oy==null?vb-H:cam.oy;
   ox=W<=cw?(cw-W)/2:Math.min(0,Math.max(cw-W,ox));
   oy=H<=vh?vt+(vh-H)/2:Math.min(vt,Math.max(vb-H,oy));
@@ -4476,8 +4476,12 @@ const CAMP=[
    areas:[['w',0,1,10,1],['m',0,4,2,6],['m',8,3,10,5],['m',4,6,5,6],['m',9,7,10,7],['h',0,10,3,12],['h',7,10,10,12],['b',1,15,2,15],['b',8,15,9,15],['b',3,17,3,17],['b',7,17,7,18],['f',0,18,1,18],['f',9,17,10,18],['R',6,13,6,13]],
    routes:[[[3,-1],[3,8],[5,8],[5,19]],[[7,-1],[7,8],[5,8],[5,19]]],fords:[]}}
 ];
-const WM={m_brest:2.4,m_dubos:2.8,m_stz:2.7,m_ponyri:1.6,m_seelow:1.9};
-for(const m of CAMP){MAPS[m.id]=m.map;prepMap(m.map);
+// Karten 20 % größer: Koordinaten hochrechnen, Wege von Hindernissen freiräumen
+function scaleMap(M,f){const C=Math.round(M.cols*f),R=Math.round(M.rows*f),sx=C/M.cols,sy=R/M.rows,px=v=>Math.round((v+.5)*sx-.5),py=v=>Math.round((v+.5)*sy-.5);
+  M.areas=M.areas.map(([c,x0,y0,x1,y1])=>[c,Math.floor(x0*sx),Math.floor(y0*sy),Math.ceil((x1+1)*sx)-1,Math.ceil((y1+1)*sy)-1]);
+  M.routes=M.routes.map(r=>r.map(([x,y])=>[px(x),py(y)]));M.labels=M.labels.map(([x,y,...o])=>[x*sx,y*sy,...o]);M.cols=C;M.rows=R}
+const WM={m_brest:1.5,m_dubos:2.2,m_stz:2.7,m_ponyri:1.6,m_seelow:1.9};
+for(const m of CAMP){MAPS[m.id]=m.map;scaleMap(m.map,1.2);prepMap(m.map);for(const k of m.map.set){const[x,y]=k.split(',').map(Number);if('bhfRm'.includes(m.map.terr[y][x]))m.map.terr[y][x]='.'}
   SCEN[m.id]={camp:1,waveMul:WM[m.id]||1,rew:1.1/(WM[m.id]||1),title:m.title,year:m.date,sides:[m.side,m.side==='su'?'de':'su'],blurb:m.story,money:m.money,waves:m.waves,top:m.top,maxTier:m.maxTier,allow:m.allow||null,mod:m.mod||{},weather:m.weather,radio:m.radio}}
 const CKEY='frontlinie-camp-v1';
 function campDone(){try{return+localStorage.getItem(CKEY)||0}catch(e){return 0}}
