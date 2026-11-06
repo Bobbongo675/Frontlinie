@@ -230,7 +230,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <script>
 
 (()=>{
-let COLS=14, ROWS=24;const MAXW=15;
+let COLS=14, ROWS=24;let MAXW=15;
 const $=s=>document.querySelector(s);
 function rng(seed){return()=>{seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 const fmt=n=>(Math.round(n*10)/10).toString().replace('.',',');
@@ -334,7 +334,7 @@ const MODELMAP={
     flakl:['M4','DShKAA','72K','61K'],flakh:['3K','M38_76','52K','KS18']}};
 for(const s in MODELMAP)for(const ty in MODELMAP[s])MODELMAP[s][ty].forEach((id,i)=>{if(id&&VAR[s][ty]&&VAR[s][ty][i])VAR[s][ty][i][3].m=id});
 const TIER=[{d:1,r:1,p:0},{d:1.6,r:1.08,p:1.5},{d:2.5,r:1.16,p:3},{d:3.2,r:1.24,p:4.5}];
-const maxLvl=type=>{const o=VAR[G.side][type];return o?o.length:1};
+const maxLvl=type=>{const o=VAR[G.side][type];return o?Math.min(o.length,(SCEN[G.scen]&&SCEN[G.scen].maxTier)||9):1};
 const vOf=(side,type,lvl)=>{const o=VAR[side][type];return o?o[lvl-1]:null};
 const nameOf=(side,type,lvl)=>{const v=vOf(side,type,lvl||1);return v?v[0]:OBST[side][type]};
 const calOf=(side,type,lvl)=>{const v=vOf(side,type,lvl||1);return v?v[1]:''};
@@ -804,9 +804,9 @@ function pointAt(d,pi){
 }
 function makeWave(n){
   const W={inf:4,car:1,apc:1,ltank:1,mtank:1,htank:.7,fighter:.7,bomber:.6,attack:.7,recon:.7,pio:.9,goliath:.6,sturm:.8},mod=SCEN[G.scen].mod;
-  const nn=Math.max(1,Math.round(n*25/MAXW)),pn=Math.round((n-1)*25/MAXW);
+  const TOP=SCEN[G.scen].top||25,nn=Math.max(1,Math.round(n*TOP/MAXW)),pn=Math.round((n-1)*TOP/MAXW),AL=SCEN[G.scen].allow;
   let budget=Math.round((30+16*nn+2*nn*nn)*(n%5===0?1.15:1)*.66*(G.M.waveMul||SCEN[G.scen].waveMul||1));
-  const av=Object.keys(ED).filter(k=>UNLOCK[k]<=nn&&W[k]&&!(k==='goliath'&&G.enemy!=='de')),list=[];
+  const av=Object.keys(ED).filter(k=>UNLOCK[k]<=nn&&W[k]&&!(k==='goliath'&&G.enemy!=='de')&&(!AL||AL.includes(k))),list=[];
   for(const k of av.filter(k=>UNLOCK[k]>pn&&UNLOCK[k]<=nn)){list.push(k,k);budget-=ED[k].pts*2}
   let guard=0;
   while(budget>=5&&guard++<600){
@@ -851,7 +851,7 @@ function destroyTower(t){
 
 let eid=0;
 function spawn(k,d0,pi){
-  const D=ED[k],m=(1+.028*(Math.round(G.wave*25/MAXW)-1))*(G.prepMul||1);
+  const D=ED[k],m=(1+.028*(Math.round(G.wave*(SCEN[G.scen].top||25)/MAXW)-1))*(G.prepMul||1);
   const e={id:eid++,pi:0,ricT:0,cdA:Math.random(),k,D,hp:D.hp*m,max:D.hp*m,arm:D.arm,d:d0||0,air:!!D.air,dead:false,flash:0,off:D.veh?(Math.random()-.5)*.12:(Math.random()-.5)*.44,bob:Math.random()*6,x:0,y:0,ang:0,v:D.spd,prone:0,tr:0,lk:Math.random()*12|0};
   if(pi==null){if(G.laneLeft<=0){G.lane=Math.floor(Math.random()*G.M.paths.length);G.laneLeft=2+Math.random()*5|0}G.laneLeft--;pi=G.lane}e.pi=pi%G.M.paths.length;e.assault=!D.veh&&!D.air&&Math.random()<.4;
   if(e.air){const CC=airCorr(),ci=G.airC&&G.airC.length?G.airC[Math.floor(Math.random()*G.airC.length)]:Math.floor(Math.random()*CC.length),c=CC[ci],j=(Math.random()-.5)*1.4;
@@ -883,7 +883,7 @@ function hit(e,dmg,pen){
   if(e.hp<=0)kill(e);
 }
 function kill(e){
-  e.dead=true;G.money+=e.D.rew;if(window.onKill)onKill(e);
+  e.dead=true;G.money+=Math.round(e.D.rew*(SCEN[G.scen].rew||1));if(window.onKill)onKill(e);
   if(e.D.veh){makeWreck(e);sfx('kill',e.x)}
   else if(e.air){planeDown(e);sfx('kill',e.x)}
   else{for(let i=0;i<3;i++)part('dust',e.x,e.y,.08);
@@ -3799,7 +3799,7 @@ $('#bStrike').addEventListener('click',()=>{
 /* ---------- Wellen ---------- */
 // Testauswahl: gezielt einen Gegnertyp und eine Anzahl für die nächste Welle festlegen
 function nextList(n){return G.pick&&G.pick.k?Array(G.pick.n).fill(G.pick.k):makeWave(n)}
-function renderPicker(){const pk=$('#picker');const show=!!(G&&G.live&&(G.scen==='test'||DEV));pk.hidden=!show;$('#bClean').hidden=!show;if(!show){updateInsets();return}
+function renderPicker(){const pk=$('#picker');const show=!!(G&&G.live&&DEV);pk.hidden=!show;$('#bClean').hidden=!show;if(!show){updateInsets();return}
   G.pick=G.pick||{k:null,n:5};const P=G.pick;
   $('#pkType').innerHTML='<span class="lbl">Gegner</span>'+[[null,'Gemischt'],...Object.keys(ED).filter(k=>!ED[k].hidden&&!(k==='goliath'&&G.enemy!=='de')).map(k=>[k,UNAMES[G.enemy][k]])].map(([k,n])=>`<button data-pk="${k||''}" class="${P.k===k?'on':''}">${n}</button>`).join('');
   $('#pkNum').innerHTML='<span class="lbl">Anzahl</span>'+[1,3,5,10,20].map(n=>`<button data-pn="${n}" class="${P.n===n?'on':''}" ${P.k?'':'disabled'}>${n}×</button>`).join('');
@@ -3897,7 +3897,7 @@ function buildStart(){
     b.addEventListener('click',()=>{$('#ovStart').hidden=true;if(!menuWasPaused){G.paused=false;$('#bPause').textContent='II'}});box1.appendChild(b)}
   const sv=loadSave();
   if(sv&&!running){const b=document.createElement('button');b.className='cont';b.innerHTML=`Weiterspielen<small>${SIDES[sv.side].name} · nach Welle ${sv.wave} von ${MAXW} · ${sv.lives} Stellungsstärke</small>`;b.addEventListener('click',()=>resumeGame(sv));box1.appendChild(b)}
-  for(const id of Object.keys(SCEN)){const S=SCEN[id];
+  for(const id of Object.keys(SCEN)){const S=SCEN[id];if(S.camp)continue;
     const el=document.createElement('section');el.className='scen';
     el.innerHTML=`<h2>${S.title}<span>${S.year}</span></h2><p>${S.blurb}</p><div class="sides"></div>`;
     const sides=el.querySelector('.sides');
@@ -4404,6 +4404,209 @@ const _ghostInfo=ghostInfo;ghostInfo=function(){let s=_ghostInfo();const g=G.gho
   const fb=document.createElement('button');fb.className='rbtn';fb.id='bFc';fb.setAttribute('aria-label','Feuerleitung');fb.title='Feuerleitung (B)';fb.innerHTML='Feuer-<br>leitung';$('#bStrike').before(fb);fb.addEventListener('click',()=>toggleFc());
   const how=$('.how');if(how)how.insertAdjacentHTML('beforeend','<li><b>Feuerleitung:</b> Artillerie trifft nur, was gesehen wird. B-Stellen sehen weit, Taste rechts oder B zeigt Batterien, Feuerräume und toten Raum.</li><li><b>Mac:</b> Leertaste pausiert, 1–3 springt zu den Achsen.</li>');
   const ro=new ResizeObserver(()=>{const t=$('#tray');if(t)document.documentElement.style.setProperty('--trayH',t.getBoundingClientRect().height+'px')});ro.observe($('#tray'))})();
+/* ===================== v80: Feldzug (kleine Hochformat-Karten mit Story) und iPhone-Oberfläche ===================== */
+// ---------- Missionen ----------
+const CAMP=[
+ {id:'m_brest',side:'su',title:'Festung Brest',date:'22. Juni 1941',place:'Brest am Bug',
+  story:'Der Krieg beginnt an diesem Morgen ohne Vorwarnung. Die Festung Brest liegt direkt an der Grenze, am Bug. Deutsche Infanterie setzt über den Fluss, Sturmgeschütze und Nebelwerfer unterstützen sie. In der Festung sind Grenzsoldaten, NKWD-Truppen, Panzerleute und Familien eingeschlossen. Halte die Zitadelle.',
+  goal:'8 Wellen abwehren. Waffen nur bis Stufe 2.',
+  hist:'Angreifer war die österreichische 45. Infanterie-Division (rund 17.000 Mann), unterstützt von der Artillerie zweier weiterer Divisionen und einer Sturmgeschützbatterie. In der Festung waren etwa 9.000 Soldaten und rund 300 Familienangehörige. Das Ostfort ergab sich am 29. Juni nach zwei Luftangriffen. Die oft genannten „32 Tage Widerstand“ gelten als Mythos.',
+  game:'Panzer II und Kradschützen sind für die Abwechslung dabei, nicht als historische Angabe.',
+  src:'Wikipedia: Defense of Brest Fortress',
+  win:'Im Spiel hältst du stand. Historisch fiel die Festung nach etwa acht Tagen, rund 6.800 Verteidiger gerieten in Gefangenschaft.',
+  radio:{1:'Brücke über den Bug unter Feuer. Infanterie setzt über.',3:'Sturmgeschütze am Westufer gemeldet.',5:'Nebelwerfer schießen auf die Kasematten.',7:'Flugzeuge im Anflug auf die Zitadelle.'},
+  waves:8,top:11,maxTier:2,money:550,allow:['inf','car','recon','apc','pio','ltank','sturm','attack','fighter'],mod:{sturm:1.4},weather:[['clear',1]],
+  map:{seed:101,g1:'#7d7a50',road:'#5d4c37',cols:11,rows:19,
+   labels:[[5.5,4.3,'Bug',0,1],[5.5,16.4,'Zitadelle',0,.8],[8.6,1.2,'Westufer',0,.6]],
+   areas:[['w',0,4,10,5],['f',0,0,1,2],['f',9,0,10,2],['g',4,0,6,2],['f',0,7,1,8],
+     ['b',1,10,2,11],['b',8,10,9,11],['b',1,15,2,16],['b',8,15,9,16],['b',3,17,3,18],['b',7,17,7,18],
+     ['R',4,12,4,12],['R',6,14,6,14],['R',9,7,9,7],['R',2,13,2,13],['h',9,13,10,13]],
+   routes:[[[3,-1],[3,8],[7,8],[7,13],[5,13],[5,19]],[[8,-1],[8,8],[7,8],[7,13],[5,13],[5,19]]],fords:[]}},
+ {id:'m_dubos',side:'su',title:'Dubossekowo',date:'16. November 1941',place:'bei Wolokolamsk, westlich von Moskau',
+  story:'Die Wehrmacht greift auf Moskau an. Bei Wolokolamsk hält die 316. Schützendivision unter Iwan Panfilow die Front. Am 16. November greift die 2. Panzer-Division in Kampfgruppen an, auch gegen die Bahnstation Dubossekowo. Schnee liegt auf den Feldern. Halte die Station.',
+  goal:'9 Wellen abwehren. Waffen nur bis Stufe 2.',
+  hist:'Die Sowjetpresse meldete, 28 Soldaten der 4. Kompanie des 1075. Schützenregiments hätten hier 18 Panzer zerstört und seien alle gefallen. Eine Untersuchung von 1948 (Bericht von Generalleutnant Nikolai Afanassjew) kam zu dem Schluss, dass dieses Gefecht so nicht stattfand: Sechs der angeblich Gefallenen lebten, und der Journalist gab zu, die meisten Einzelheiten erfunden zu haben. Die Division wurde später zur 8. Garde-Schützendivision „Panfilow“.',
+  game:'Den Kampf um die Station gab es, die Heldenlegende der 28 nicht. Das Spiel erzählt deshalb keine Namen nach.',
+  src:'Wikipedia: Panfilov’s Twenty-Eight Guardsmen',
+  win:'Die Station ist gehalten. Moskau wurde im Winter 1941 nicht genommen.',
+  radio:{1:'Kampfgruppen der 2. Panzer-Division vor Dubossekowo.',4:'Panzer am Bahndamm.',6:'Sturzkampfbomber über der Station.',9:'Letzter Ansturm auf die Station.'},
+  waves:9,top:15,maxTier:2,money:600,allow:['inf','car','recon','apc','pio','ltank','mtank','sturm','attack','fighter','bomber'],mod:{mtank:1.2},weather:[['snow',.7],['clear',.3]],
+  map:{seed:202,g1:'#9a9b8c',road:'#6b6150',snow:1,cols:11,rows:19,
+   labels:[[8.3,5.6,'Dubossekowo',0,.75],[2.2,7.4,'Bahnlinie',0,.6],[8.1,14.2,'Höhe',0,.6]],
+   areas:[['e',0,7,10,7],['b',7,6,8,6],['b',9,5,9,5],['f',0,0,1,3],['f',6,0,7,3],['f',0,12,2,15],['f',9,15,10,18],['h',7,13,8,14],['b',1,17,2,17],['R',4,15,4,15]],
+   routes:[[[2,-1],[2,4],[4,4],[4,10],[6,10],[6,19]],[[9,-1],[9,3],[10,3],[10,11],[6,11],[6,19]]],fords:[]}},
+ {id:'m_stz',side:'su',title:'Traktorenwerk',date:'14. Oktober 1942',place:'Stalingrad, Nordteil',
+  story:'Im Norden Stalingrads verteidigt die 37. Garde-Schützendivision das Traktorenwerk. Sie ist Anfang Oktober über die Wolga gekommen. Am 14. Oktober greift die Wehrmacht mit Panzern auf breiter Front an. Zwischen den Werkhallen wird um jede Ruine gekämpft. Hinter dir liegt nur noch der Fluss.',
+  goal:'10 Wellen abwehren. Ruinen geben 50 % Deckung.',
+  hist:'Die 37. Garde-Schützendivision setzte am 2. Oktober mit rund 7.000 Mann über die Wolga. Am 14. Oktober wurden ihre Reste in den Werkhallen eingeschlossen, die 14. Panzer-Division brach bis zur Wolga durch. Am 15. Oktober zählte die Division noch etwa 250 Mann.',
+  game:'Die Karte ist frei gestaltet. Werkhallen, Straßen und Ruinen sind nicht nach einem Stadtplan gezeichnet.',
+  src:'Wikipedia: 37th Guards Rifle Division',
+  win:'Im Spiel hält das Werk. Historisch wurde die Division dort fast vollständig aufgerieben.',
+  radio:{1:'Stoßtrupps zwischen den Werkhallen.',4:'Pioniere räumen unsere Sperren.',6:'Panzer auf dem Werksgelände.',10:'Der Feind will zur Wolga durchbrechen.'},
+  waves:10,top:18,maxTier:3,money:650,allow:['inf','recon','apc','pio','ltank','mtank','sturm','attack','bomber','fighter'],mod:{inf:1.4,mtank:1.2},weather:[['clear',.6],['rain',.2],['fog',.2]],
+  map:{seed:303,g1:'#7a7262',road:'#5a5048',cols:11,rows:19,
+   labels:[[5.5,18.2,'Wolga',0,1],[2,9.3,'Werkhalle',0,.55],[8.9,9.3,'Werkhalle',0,.55],[5.5,2.4,'Traktorenwerk',0,.7]],
+   areas:[['w',0,17,10,18],['b',1,6,3,8],['b',7,6,9,8],['b',1,11,2,13],['b',8,11,9,13],['b',0,0,0,2],['b',10,0,10,2],
+     ['R',4,2,4,2],['R',6,2,6,2],['R',0,9,0,9],['R',10,9,10,9],['R',4,10,4,10],['R',6,12,6,12],['R',3,15,3,15],['R',7,15,7,15],['R',0,15,0,15],['R',10,15,10,15],['R',7,10,7,10],['R',3,5,3,5]],
+   routes:[[[2,-1],[2,4],[5,4],[5,16]],[[8,-1],[8,4],[5,4],[5,16]],[[-1,10],[3,10],[3,14],[5,14],[5,16]]],fords:[]}},
+ {id:'m_ponyri',side:'su',title:'Ponyri',date:'Juli 1943',place:'Nordfront des Kursker Bogens',
+  story:'Unternehmen Zitadelle. Im Norden des Kursker Bogens greift die 9. Armee an. Um Bahnhof und Dorf Ponyri und die Höhe 253,5 wird tagelang gekämpft. Die 307. Schützendivision hält. Diesmal kommen Tiger und Jagdpanzer Ferdinand.',
+  goal:'10 Wellen abwehren. In der letzten Welle greift ein Ferdinand an.',
+  hist:'Die 307. Schützendivision (29. Schützenkorps) verteidigte Ponyri ab dem 5. Juli 1943 gegen Teile der 9. Armee, vor allem die 9. und 18. Panzer-Division. Gegenangriffe stützten die 129. Panzerbrigade und SU-122. Fotos zeigen ausgefallene Ferdinand der schweren Panzerjäger-Abteilung 654 am Bahnhof Ponyri, insgesamt waren bei Kursk 89 Ferdinand im Einsatz. Der deutsche Vorstoß blieb weit vor seinem Ziel stecken.',
+  game:'Ob Tiger genau hier fuhren, ist nicht verifiziert. Sie sind als Steigerung dabei.',
+  src:'Wikipedia: 307th Rifle Division (Soviet Union) · Elefant',
+  win:'Ponyri ist gehalten. Der Nordangriff auf Kursk kam nicht durch.',
+  radio:{1:'Infanterie greift den Bahnhof an.',3:'Panzer vor dem Bahndamm.',6:'Schwere Panzer gemeldet.',10:'Ferdinand rollen auf den Bahnhof zu.'},
+  waves:10,top:18,maxTier:3,money:700,mod:{mtank:1.3,htank:1.2},weather:[['clear',.8],['rain',.2]],
+  map:{seed:404,g1:'#7d7a50',road:'#5d4c37',cols:11,rows:19,
+   labels:[[2,2.6,'Höhe 253,5',0,.65],[8.9,10.4,'Bahnhof Ponyri',0,.6],[2.2,13.55,'Ponyri',0,.75]],
+   areas:[['h',1,2,3,4],['e',7,0,7,18],['b',8,8,9,9],['b',1,12,1,12],['b',3,12,3,12],['b',2,14,2,14],['b',0,16,1,16],['g',8,13,10,16],['g',0,7,2,9],['f',10,0,10,3],['f',0,18,2,18]],
+   routes:[[[5,-1],[5,10],[4,10],[4,19]],[[9,-1],[9,6],[5,6],[5,10],[4,10],[4,19]]],fords:[]}},
+ {id:'m_seelow',side:'de',title:'Seelower Höhen',date:'16. April 1945',place:'Oderbruch, Brandenburg',
+  story:'Die Rote Armee steht an der Oder. Zwischen Fluss und Seelower Höhen liegt eine überflutete Niederung. Gotthard Heinrici, Befehlshaber der Heeresgruppe Weichsel, hat das Ufer nur schwach besetzt und die Höhen ausgebaut. Die 9. Armee unter General Theodor Busse soll halten. Gegen sie steht die 1. Weißrussische Front unter Georgi Schukow.',
+  goal:'10 Wellen abwehren. Die Höhen geben +15 % Reichweite.',
+  hist:'16. bis 19. April 1945. Rund 110.000 Mann der 9. Armee gegen etwa eine Million Soldaten der 1. Weißrussischen Front, darunter die 1. Polnische Armee. Pioniere hatten Stauwasser abgelassen, die Niederung wurde zum Sumpf. Die sowjetischen Scheinwerfer wirkten im Staub des Trommelfeuers kaum. Am 19. April waren die Höhen durchbrochen, die 9. Armee wurde später bei Halbe eingekesselt.',
+  game:'Im Spiel kannst du die Höhen halten. Historisch war der Weg nach Berlin danach offen.',
+  src:'Wikipedia: Battle of the Seelow Heights',
+  win:'Die Höhen sind gehalten, im Spiel. Historisch endete der Krieg in Europa drei Wochen später.',
+  radio:{1:'Trommelfeuer auf die vordere Linie. Scheinwerfer im Staub.',4:'Feind kommt durch die Niederung.',7:'Schwere Panzer gemeldet.',10:'Letzter Ansturm auf die Höhen.'},
+  waves:10,top:20,maxTier:3,money:750,mod:{mtank:1.3,htank:1.3,attack:1.2},weather:[['fog',.35],['clear',.65]],
+  map:{seed:505,g1:'#77774f',road:'#5d4c37',cols:11,rows:19,
+   labels:[[5.5,1.3,'Oder',0,.9],[1.4,5.3,'Oderbruch',0,.6],[8.6,11.2,'Seelower Höhen',0,.6],[2.1,16.3,'Seelow',0,.75]],
+   areas:[['w',0,1,10,1],['m',0,4,2,6],['m',8,3,10,5],['m',4,6,5,6],['m',9,7,10,7],['h',0,10,3,12],['h',7,10,10,12],['b',1,15,2,15],['b',8,15,9,15],['b',3,17,3,17],['b',7,17,7,18],['f',0,18,1,18],['f',9,17,10,18],['R',6,13,6,13]],
+   routes:[[[3,-1],[3,8],[5,8],[5,19]],[[7,-1],[7,8],[5,8],[5,19]]],fords:[]}}
+];
+const WM={m_brest:2.4,m_dubos:2.8,m_stz:2.7,m_ponyri:1.6,m_seelow:1.9};
+for(const m of CAMP){MAPS[m.id]=m.map;prepMap(m.map);
+  SCEN[m.id]={camp:1,waveMul:WM[m.id]||1,rew:1.1/(WM[m.id]||1),title:m.title,year:m.date,sides:[m.side,m.side==='su'?'de':'su'],blurb:m.story,money:m.money,waves:m.waves,top:m.top,maxTier:m.maxTier,allow:m.allow||null,mod:m.mod||{},weather:m.weather,radio:m.radio}}
+const CKEY='frontlinie-camp-v1';
+function campDone(){try{return+localStorage.getItem(CKEY)||0}catch(e){return 0}}
+function campSet(n){try{if(n>campDone())localStorage.setItem(CKEY,n)}catch(e){}}
+const campIdx=id=>CAMP.findIndex(m=>m.id===id);
+
+// Wellen: nur erlaubte Gegner, Ersatz für feste Zusatzgegner
+const FALL={boss:'htank',htank:'mtank',mtank:'ltank',sturm:'ltank',goliath:'pio',bomber:'attack',attack:'fighter',ltank:'apc',recon:'car',pio:'inf',fighter:'inf',apc:'car',car:'inf'};
+const _makeWave=makeWave;makeWave=function(n){const L=_makeWave(n),AL=SCEN[G.scen].allow;if(!AL)return L;
+  return L.map(k=>{let q=k,g=0;while(!AL.includes(q)&&FALL[q]&&g++<8)q=FALL[q];return AL.includes(q)?q:'inf'})};
+const _newGame83=newGame;newGame=function(scen,side,resume){MAXW=SCEN[scen].waves||15;_newGame83(scen,side,resume);
+  if(SCEN[scen].camp){G.M.snow=MAPS[scen].snow;requestAnimationFrame(()=>{cam.z=Math.max(zMin(),Math.min(1.6,cw/COLS/base.s));cam.ox=cam.oy=null;applyCam();centerOn(COLS/2,ROWS*.62);$('#zFit').textContent='Karte'})}};
+const _paintGround=paintGround;paintGround=function(c){_paintGround(c);if(G.M&&G.M.snow){const r=rng(G.M.seed+9);c.save();c.globalAlpha=.42;c.fillStyle='#e9ebe6';c.fillRect(0,0,COLS,ROWS);
+  for(let i=0;i<900;i++){c.globalAlpha=.3;c.fillStyle=r()<.5?'#ffffff':'#b9beb8';c.fillRect(r()*COLS,r()*ROWS,.03+r()*.05,.02+r()*.03)}c.restore()}};
+$('#go').addEventListener('click',()=>{const S=G&&SCEN[G.scen];if(S&&S.radio&&S.radio[G.wave])radio(S.radio[G.wave])});
+
+// Lagebesprechung vor der Mission
+function briefing(i){const m=CAMP[i];let o=$('#ovBrief');if(!o){o=document.createElement('div');o.className='ov';o.id='ovBrief';document.body.appendChild(o)}
+  o.innerHTML=`<div class="sheet brief"><h1 class="brand"><small>Mission ${i+1} von ${CAMP.length} · ${SIDES[m.side].name}</small>${m.title}</h1>
+   <p class="bdate">${m.date} · ${m.place}</p><p class="lede">${m.story}</p>
+   <div class="bgoal"><span class="lbl">Auftrag</span><b>${m.goal}</b></div>
+   <details class="bhist"><summary>Was wirklich geschah</summary><p>${m.hist}</p><p class="bgame"><b>Spiel:</b> ${m.game}</p><p class="bsrc">Quelle: ${m.src}</p></details>
+   <div class="col"><button class="pri" data-b="go">Gefecht beginnen</button><button data-b="x">Zurück</button></div></div>`;
+  o.hidden=false;o.scrollTop=0;const sw=$('#ovStart').hidden;$('#ovStart').hidden=true;o.onclick=ev=>{const b=ev.target.closest('button');if(!b)return;o.hidden=true;if(b.dataset.b==='x'){buildStart();$('#ovStart').hidden=false}
+    if(b.dataset.b==='go'){newGame(m.id,m.side);radio(m.title+', '+m.date+'. '+m.goal)}}}
+const _buildStart=buildStart;buildStart=function(){_buildStart();const box=$('#scenList');if(!box)return;
+  const done=campDone(),sec=document.createElement('section');sec.className='scen camp';
+  sec.innerHTML=`<h2>Feldzug<span>${Math.min(done,CAMP.length)}/${CAMP.length} geschafft</span></h2><p>Fünf kurze Gefechte von 1941 bis 1945 auf kleinen Karten fürs Handy. Jede Mission hat eine Lagebesprechung und einen Blick auf die Geschichte.</p><div class="mlist"></div>`;
+  const L=sec.querySelector('.mlist');
+  CAMP.forEach((m,i)=>{const lock=i>done,st=getStars(m.id,m.side),b=document.createElement('button');b.className='mis'+(lock?' lock':'')+(i===done?' next':'');b.disabled=lock;
+    b.innerHTML=`<span class="mn">${i+1}</span><span class="mt"><b>${m.title}</b><small>${m.date} · ${SIDES[m.side].name}</small></span><span class="ms">${lock?'gesperrt':st?'★'.repeat(st)+'☆'.repeat(3-st):i===done?'neu':''}</span>`;
+    b.addEventListener('click',()=>briefing(i));L.appendChild(b)});
+  const first=box.querySelector('section.scen');box.insertBefore(sec,first||null);
+  if(first&&!box.querySelector('.freehd')){const h=document.createElement('p');h.className='lbl freehd';h.style.cssText='margin:6px 0 -4px;font-size:12px';h.textContent='Freie Gefechte';box.insertBefore(h,first)}};
+const _endGame=endGame;endGame=function(won){const was=G.over;_endGame(won);if(was)return;const i=campIdx(G.scen);if(i<0){const nb=$('#bNext');if(nb)nb.hidden=true;$('#bAgain').classList.add('pri');return}const m=CAMP[i];
+  if(won&&!DEV)campSet(i+1);
+  $('#endText').textContent=(won?`Alle ${MAXW} Wellen abgewehrt, ${G.lives} von 20 Stellungsstärke übrig. `+m.win:`${SIDES[G.enemy].name} ist in Welle ${G.wave} durchgebrochen. Tipp: Panzer früh mit Pak und Minen stellen, Infanterie mit MGs.`);
+  const row=$('#ovEnd .row');let nb=$('#bNext');if(!nb){nb=document.createElement('button');nb.id='bNext';nb.className='pri';row.prepend(nb);nb.addEventListener('click',()=>{const j=+nb.dataset.i;$('#ovEnd').hidden=true;if(j<CAMP.length)briefing(j);else{buildStart();$('#ovStart').hidden=false}})}
+  const next=i+1;nb.hidden=!won;nb.dataset.i=next;nb.textContent=next<CAMP.length?'Nächste Mission':'Feldzug beendet';$('#bAgain').classList.toggle('pri',!won)};
+
+// ---------- iPhone: Leiste in drei Stufen, schlanker Kopf ----------
+const PHONE=()=>document.body.classList.contains('phone');
+const ROLE={inf:'billig, hält Stellung',mg:'gegen Infanterie',mor:'kurz, über Deckung',art:'Flächenfeuer, braucht Sicht',rak:'Salven auf Gruppen',pak:'gegen Panzer',flak:'gegen Flieger',fc:'Sicht für Artillerie',obs:'Straßen sperren'};
+(function(){const st=document.createElement('style');st.textContent=`
+.brief .col{display:flex;flex-direction:column;gap:8px;width:100%}.brief .col button{padding:13px;font-weight:700;font-size:17px;border:1px solid var(--line);background:var(--panel)}.brief .col button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.brief .bdate{margin:-6px 0 0;color:var(--accent);font-weight:700;font-size:15px;letter-spacing:.04em}
+.bgoal{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);padding:8px 12px;display:flex;flex-direction:column;gap:2px;font-size:16px}
+.bhist{background:var(--panel);border:1px solid var(--line);padding:8px 12px;font-size:15px;line-height:1.35;color:var(--muted)}
+.bhist summary{cursor:pointer;color:var(--fg);font-weight:700;min-height:28px;display:flex;align-items:center}.bhist p{margin:6px 0 0}.bhist .bgame b{color:var(--fg)}.bhist .bsrc{font-size:13px;font-style:italic}
+.mlist{display:flex;flex-direction:column;gap:6px}
+.mis{display:flex;align-items:center;gap:10px;background:var(--panel-2);border:1px solid var(--line);padding:8px 10px;text-align:left;min-height:52px}
+.mis .mn{font-family:var(--font-display);font-size:22px;width:24px;text-align:center;color:var(--accent)}.mis .mt{flex:1;min-width:0}.mis .mt b{display:block;font-size:17px;line-height:1.1}.mis .mt small{color:var(--muted);font-size:13px}
+.mis .ms{font-size:13px;color:var(--accent);white-space:nowrap}.mis.next{border-color:var(--accent)}.mis.lock{opacity:.45}.mis.lock .ms{color:var(--muted)}
+.scen.camp{border-color:var(--accent)}
+#tray .grab{display:none}
+body.phone .wavebar,body.phone #sectors,body.phone #mini,body.phone #bSound{display:none!important}
+body.phone .top{gap:3px;padding-top:max(4px,env(safe-area-inset-top,0px))}
+body.phone .hud{grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:4px}
+body.phone .stat{padding:1px 7px 2px;justify-content:center}body.phone .stat .lbl{font-size:9px;line-height:1.1;letter-spacing:.02em}body.phone .stat b{font-size:17px}
+body.phone .ctrl{gap:4px}body.phone .sq{width:40px;height:40px}
+body.phone .rail{top:auto!important;bottom:calc(var(--trayH,120px) + 8px);gap:5px}
+body.phone .rbtn{width:52px;height:44px;font-size:11.5px}
+body.phone #radio{left:var(--gl);transform:none;max-width:calc(100vw - 90px);font-size:13px;padding:5px 9px}
+body.phone #toast{font-size:14px;padding:4px 10px;max-width:calc(100vw - 32px);white-space:normal;text-align:center}
+body.phone #report{width:min(300px,calc(100vw - 32px));font-size:13px}
+body.phone #tray .grab{display:flex;justify-content:center;align-items:center;height:14px;touch-action:none;cursor:grab}
+body.phone #tray .grab i{width:40px;height:5px;border-radius:3px;background:#6a6f5c}
+body.phone #tray .sh-head{min-height:44px;touch-action:none}
+body.phone #tray .tog{width:44px;height:36px}
+body.phone #tray .back{height:36px}
+body.phone #tray .pgo{flex:none;height:36px;padding:0 12px;background:var(--accent);color:var(--accent-ink);border:0;font-weight:700;font-size:15px;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+body.phone #tray .pgo:disabled{background:var(--panel-2);color:var(--muted)}
+body.phone #tray .sh-head .hint{font-size:13px}
+body.phone #tray .sh-body{max-height:34vh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+body.phone #tray.d2 .sh-body{max-height:60vh}
+body.phone #tray.d1 .groups{display:flex;overflow-x:auto;scrollbar-width:none;gap:6px;margin:0 calc(-1 * var(--gr)) 0 calc(-1 * var(--gl));padding:0 var(--gr) 2px var(--gl)}
+body.phone #tray.d1 .groups::-webkit-scrollbar{display:none}
+body.phone #tray.d1 .gcard{flex:none;width:78px;min-height:64px}
+body.phone #tray.d2 .groups{grid-template-columns:repeat(3,minmax(0,1fr))}
+body.phone #tray .gcard .gr{font-size:11px;color:var(--muted);line-height:1.15;white-space:normal}
+body.phone #tray .card .cs{font-size:11px;color:var(--muted);line-height:1.15}
+body.phone #tray .gcard,body.phone #tray .card{min-height:44px}
+body.phone #tray .seg button,body.phone #tray .acts button{min-height:40px}
+body.phone #tray .seg button{padding:4px 10px}`;document.head.appendChild(st);
+  // Ton-Schalter wandert auf dem Handy ins Menü
+  const col=$('#ovMenu .col');if(col){const b=document.createElement('button');b.id='mSound';col.insertBefore(b,$('#mRestart'));
+    const up=()=>{b.textContent='Ton: '+(SND.on?'an':'aus')};up();b.addEventListener('click',()=>{$('#bSound').click();up()});$('#bMenuTop').addEventListener('click',up)}})();
+function setPhone(){const p=Math.min(innerWidth,innerHeight)<=600||innerWidth<=600;if(p!==PHONE()){document.body.classList.toggle('phone',p);if(G&&G.M){SK=null;renderTray()}}}
+let SK=null;
+function homeState(){return!(G.sel||G.selE||G.selHQ||G.bgrp||G.build||G.ghost||G.aim||G.aim2||G.fc||G.selBat||G.selZone)}
+function autoDetent(){if(G.aim||G.aim2)return 0;if(G.fc)return G.selBat?2:1;if(G.ghost)return 1;if(G.build)return 0;if(G.bgrp)return 2;if(G.sel||G.selE||G.selHQ||G.selZone)return 1;return G.sheetHome}
+const _rt3=renderTray;renderTray=function(){const tray=$('#tray');
+  if(!G||!G.M||!PHONE()){tray.classList.remove('d0','d1','d2');return _rt3()}
+  if(G.sheet==null){G.sheet=1;G.sheetHome=G.state==='wave'?0:1}
+  const k=[G.sel?G.towers.indexOf(G.sel):-1,G.selE?1:0,G.selHQ?1:0,G.bgrp,G.build,G.ghost?G.ghost.x+','+G.ghost.y:'',G.fc?1:0,G.selBat,G.selZone?1:0,G.aim?1:0,G.aim2?1:0].join('|');
+  if(k!==SK){SK=k;G.sheet=autoDetent()}
+  G.trayOpen=G.sheet>0;_rt3();
+  tray.classList.remove('d0','d1','d2');tray.classList.add('d'+G.sheet);
+  const head=tray.querySelector('.sh-head');if(!head)return;
+  const g=document.createElement('div');g.className='grab';g.innerHTML='<i></i>';g.setAttribute('aria-hidden','true');tray.prepend(g);
+  const tog=head.querySelector('.tog');if(tog){tog.textContent=G.sheet===2?'▾':'▴';tog.setAttribute('aria-label',G.sheet===2?'Leiste verkleinern':'Leiste vergrößern')}
+  if(homeState()&&!G.fc){const gb=document.createElement('button');gb.className='pgo';gb.dataset.act='pgo';const bs=G.state==='build';gb.disabled=!bs||G.over;gb.textContent=bs?'Welle '+(G.wave+1)+' ▶':'läuft';
+    if(tog)head.insertBefore(gb,tog);else head.appendChild(gb);
+    const h=head.querySelector('.hint'),lb=head.querySelector('.lbl');
+    if(lb)lb.hidden=true;
+    if(h){const L=bs?G.next:G.enemies.filter(e=>!e.dead&&!e.fixed).map(e=>e.k).concat(G.q);const c={};(L||[]).forEach(q=>c[q]=(c[q]||0)+1);
+      h.textContent=(bs?'Nächste: ':'')+Object.keys(c).sort((a,b)=>c[b]-c[a]).slice(0,3).map(q=>c[q]+'× '+UNAMES[G.enemy][q]).join(' · ')||'Feld frei'}}
+  if(G.sheet===2){tray.querySelectorAll('.gcard').forEach(b=>{const gr=BGRP.find(x=>x.it.includes(b.dataset.build)||x.id===b.dataset.grp);if(gr&&ROLE[gr.id]&&!b.querySelector('.gr'))b.insertAdjacentHTML('beforeend',`<span class="gr">${ROLE[gr.id]}</span>`)});
+    tray.querySelectorAll('.card[data-build]').forEach(b=>{const d=TD[b.dataset.build];if(!d||d.obstacle||d.noFire||b.querySelector('.cs'))return;b.insertAdjacentHTML('beforeend',`<span class="cs">Reichw. ${d.range>=500?'Karte':fmt(d.range)} · Durchschl. ${fmt(d.pen)}</span>`)})}
+  updateInsets()};
+function setDetent(v){G.sheet=Math.max(0,Math.min(2,v));if(homeState())G.sheetHome=G.sheet;renderTray()}
+// Tippen und Ziehen an der Leiste
+$('#tray').addEventListener('click',ev=>{if(!PHONE()||!G||!G.M)return;const b=ev.target.closest('button');if(!b)return;const a=b.dataset.act;
+  if(a==='tog'){ev.stopImmediatePropagation();setDetent(G.sheet===2?(homeState()?0:1):G.sheet+1)}
+  else if(a==='pgo'){ev.stopImmediatePropagation();$('#go').click();G.sheet=G.sheetHome=0;SK=null;renderTray()}},true);
+(function(){let y0=null,s0=0,moved=false;const tray=$('#tray');
+  tray.addEventListener('pointerdown',ev=>{if(!PHONE()||!G||!G.M)return;if(!ev.target.closest('.grab,.sh-head')||ev.target.closest('button'))return;y0=ev.clientY;s0=G.sheet;moved=false;try{tray.setPointerCapture(ev.pointerId)}catch(e){}});
+  tray.addEventListener('pointermove',ev=>{if(y0==null)return;if(Math.abs(ev.clientY-y0)>8)moved=true});
+  const end=ev=>{if(y0==null)return;const dy=ev.clientY-y0;y0=null;if(!moved){setDetent(s0===2?(homeState()?0:1):s0+1);return}
+    if(dy<-28)setDetent(s0+(dy<-160?2:1));else if(dy>28)setDetent(s0-(dy>160?2:1))};
+  tray.addEventListener('pointerup',end);tray.addEventListener('pointercancel',()=>{y0=null})})();
+const _uwu=updateWaveUi;let lastState=null;updateWaveUi=function(){_uwu();if(!G||!G.M)return;if(G.state!==lastState){const was=lastState;lastState=G.state;
+  if(PHONE()&&was!=null&&homeState()){G.sheet=G.sheetHome=G.state==='wave'?0:1;SK=null}if(PHONE())renderTray()}};
+// Kopfzeile der Leiste während der Welle aktuell halten
+let phAcc=0;const _hud=hud;hud=function(dt){_hud(dt);if(!G||!G.M||!PHONE())return;phAcc+=dt;if(phAcc>1&&G.state==='wave'&&homeState()&&!G.fc){phAcc=0;const h=$('#tray .sh-head .hint');if(h){const c={};G.enemies.filter(e=>!e.dead&&!e.fixed).map(e=>e.k).concat(G.q).forEach(q=>c[q]=(c[q]||0)+1);
+  const s=Object.keys(c).sort((a,b)=>c[b]-c[a]).slice(0,3).map(q=>c[q]+'× '+UNAMES[G.enemy][q]).join(' · ')||'Feld frei';if(h.textContent!==s)h.textContent=s}}};
+const _resize=resize;resize=function(){setPhone();_resize()};
+addEventListener('resize',setPhone);setPhone();
+
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
 
 resize();buildStart();requestAnimationFrame(frame);
