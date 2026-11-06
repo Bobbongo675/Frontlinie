@@ -3008,7 +3008,7 @@ function scarCanvas(){
   if(key!==scarKey||!scarC){scarKey=key;const k=document.createElement('canvas');k.width=COLS*ps;k.height=ROWS*ps;const c=k.getContext('2d');c.setTransform(ps,0,0,ps,0,0);for(const s of G.stamps)paintStamp(c,s);if(G.cas)for(const s of G.cas)paintStamp(c,s);scarC=k}
   return scarC;
 }
-function decoKind(d){if(d.kind)return d.kind;const ost=G.scen!=='pac';return ost?(d.k<.4?'crater':d.k<.75?'bush':d.k<.88?'rock':'snow'):(d.k<.45?'palm':d.k<.8?'bush':'rock')}
+function decoKind(d){if(d.kind)return d.kind;const ost=G.scen!=='pac';return ost?(d.k<.4?'crater':d.k<.75?'bush':d.k<.88||!(G.M&&G.M.snow)?'rock':'snow'):(d.k<.45?'palm':d.k<.8?'bush':'rock')}
 function drawDeco(c,d,kind,dead){
   if(kind==='tree'&&d.sp){const sd=Math.round(d.k*1e4);if(dead)felled2(c,d.sp,sd);else tree2(c,d.sp,sd);return}
   if(kind==='log'){Ln(c,-.16,0,.16,0,'#3e3022',.06);Ln(c,-.16,-.015,.16,-.015,'#5a4630',.02);C(c,.16,0,.03,'#6b5236');C(c,.16,0,.018,'#8a6c48');Ln(c,-.06,-.03,-.1,-.07,'#3e3022',.014);
@@ -4417,7 +4417,7 @@ const CAMP=[
   radio:{1:'Brücke über den Bug unter Feuer. Infanterie setzt über.',3:'Sturmgeschütze am Westufer gemeldet.',5:'Nebelwerfer schießen auf die Kasematten.',7:'Flugzeuge im Anflug auf die Zitadelle.'},
   waves:8,top:11,maxTier:2,money:550,allow:['inf','car','recon','apc','pio','ltank','sturm','attack','fighter'],mod:{sturm:1.4},weather:[['clear',1]],
   map:{seed:101,g1:'#7d7a50',road:'#5d4c37',cols:11,rows:19,
-   labels:[[5.5,4.3,'Bug',0,1],[5.5,16.4,'Zitadelle',0,.8],[8.6,1.2,'Westufer',0,.6]],
+   labels:[[5.5,4.3,'Bug',0,1],[5.5,16.4,'Zitadelle',0,.8],[5.5,1.6,'Westufer',0,.6]],
    areas:[['w',0,4,10,5],['f',0,0,1,2],['f',9,0,10,2],['g',4,0,6,2],['f',0,7,1,8],
      ['b',1,10,2,11],['b',8,10,9,11],['b',1,15,2,16],['b',8,15,9,16],['b',3,17,3,18],['b',7,17,7,18],
      ['R',4,12,4,12],['R',6,14,6,14],['R',9,7,9,7],['R',2,13,2,13],['h',9,13,10,13]],
@@ -4445,7 +4445,7 @@ const CAMP=[
   radio:{1:'Stoßtrupps zwischen den Werkhallen.',4:'Pioniere räumen unsere Sperren.',6:'Panzer auf dem Werksgelände.',10:'Der Feind will zur Wolga durchbrechen.'},
   waves:10,top:18,maxTier:3,money:650,allow:['inf','recon','apc','pio','ltank','mtank','sturm','attack','bomber','fighter'],mod:{inf:1.4,mtank:1.2},weather:[['clear',.6],['rain',.2],['fog',.2]],
   map:{seed:303,g1:'#7a7262',road:'#5a5048',cols:11,rows:19,
-   labels:[[5.5,18.2,'Wolga',0,1],[2,9.3,'Werkhalle',0,.55],[8.9,9.3,'Werkhalle',0,.55],[5.5,2.4,'Traktorenwerk',0,.7]],
+   labels:[[5.5,18.2,'Wolga',0,1],[5.5,2.4,'Traktorenwerk',0,.7]],
    areas:[['w',0,17,10,18],['b',1,6,3,8],['b',7,6,9,8],['b',1,11,2,13],['b',8,11,9,13],['b',0,0,0,2],['b',10,0,10,2],
      ['R',4,2,4,2],['R',6,2,6,2],['R',0,9,0,9],['R',10,9,10,9],['R',4,10,4,10],['R',6,12,6,12],['R',3,15,3,15],['R',7,15,7,15],['R',0,15,0,15],['R',10,15,10,15],['R',7,10,7,10],['R',3,5,3,5]],
    routes:[[[2,-1],[2,4],[5,4],[5,16]],[[8,-1],[8,4],[5,4],[5,16]],[[-1,10],[3,10],[3,14],[5,14],[5,16]]],fords:[]}},
@@ -4459,7 +4459,7 @@ const CAMP=[
   radio:{1:'Infanterie greift den Bahnhof an.',3:'Panzer vor dem Bahndamm.',6:'Schwere Panzer gemeldet.',10:'Ferdinand rollen auf den Bahnhof zu.'},
   waves:10,top:18,maxTier:3,money:700,mod:{mtank:1.3,htank:1.2},weather:[['clear',.8],['rain',.2]],
   map:{seed:404,g1:'#7d7a50',road:'#5d4c37',cols:11,rows:19,
-   labels:[[2,2.6,'Höhe 253,5',0,.65],[8.9,10.4,'Bahnhof Ponyri',0,.6],[2.2,13.55,'Ponyri',0,.75]],
+   labels:[[2,2.6,'Höhe 253,5',0,.65],[8.9,10.4,'Bahnhof Ponyri',0,.6],[2.2,11.3,'Ponyri',0,.75]],
    areas:[['h',1,2,3,4],['e',7,0,7,18],['b',8,8,9,9],['b',1,12,1,12],['b',3,12,3,12],['b',2,14,2,14],['b',0,16,1,16],['g',8,13,10,16],['g',0,7,2,9],['f',10,0,10,3],['f',0,18,2,18]],
    routes:[[[5,-1],[5,10],[4,10],[4,19]],[[9,-1],[9,6],[5,6],[5,10],[4,10],[4,19]]],fords:[]}},
  {id:'m_seelow',side:'de',title:'Seelower Höhen',date:'16. April 1945',place:'Oderbruch, Brandenburg',
@@ -4472,15 +4472,20 @@ const CAMP=[
   radio:{1:'Trommelfeuer auf die vordere Linie. Scheinwerfer im Staub.',4:'Feind kommt durch die Niederung.',7:'Schwere Panzer gemeldet.',10:'Letzter Ansturm auf die Höhen.'},
   waves:10,top:20,maxTier:3,money:750,mod:{mtank:1.3,htank:1.3,attack:1.2},weather:[['fog',.35],['clear',.65]],
   map:{seed:505,g1:'#77774f',road:'#5d4c37',cols:11,rows:19,
-   labels:[[5.5,1.3,'Oder',0,.9],[1.4,5.3,'Oderbruch',0,.6],[8.6,11.2,'Seelower Höhen',0,.6],[2.1,16.3,'Seelow',0,.75]],
+   labels:[[5.5,1.3,'Oder',0,.9],[1.4,5.3,'Oderbruch',0,.6],[8.6,11.2,'Seelower Höhen',0,.6],[2.1,14.2,'Seelow',0,.75]],
    areas:[['w',0,1,10,1],['m',0,4,2,6],['m',8,3,10,5],['m',4,6,5,6],['m',9,7,10,7],['h',0,10,3,12],['h',7,10,10,12],['b',1,15,2,15],['b',8,15,9,15],['b',3,17,3,17],['b',7,17,7,18],['f',0,18,1,18],['f',9,17,10,18],['R',6,13,6,13]],
    routes:[[[3,-1],[3,8],[5,8],[5,19]],[[7,-1],[7,8],[5,8],[5,19]]],fords:[]}}
 ];
 // Karten 20 % größer: Koordinaten hochrechnen, Wege von Hindernissen freiräumen
 function scaleMap(M,f){const C=Math.round(M.cols*f),R=Math.round(M.rows*f),sx=C/M.cols,sy=R/M.rows,px=v=>Math.round((v+.5)*sx-.5),py=v=>Math.round((v+.5)*sy-.5);
-  M.areas=M.areas.map(([c,x0,y0,x1,y1])=>[c,Math.floor(x0*sx),Math.floor(y0*sy),Math.ceil((x1+1)*sx)-1,Math.ceil((y1+1)*sy)-1]);
+  M.areas=M.areas.map(([c,x0,y0,x1,y1])=>{
+    // Häuser und Ruinen behalten ihre Größe (sonst entstehen Raster gleicher Häuser), Linien wie Bahndamm bleiben ein Feld breit
+    if(c==='b'||c==='R'){const nx=px(x0),ny=py(y0);return[c,nx,ny,nx+x1-x0,ny+y1-y0]}
+    const X0=Math.floor(x0*sx),Y0=Math.floor(y0*sy),X1=Math.ceil((x1+1)*sx)-1,Y1=Math.ceil((y1+1)*sy)-1;
+    if(c==='e'||c==='d'){if(x0===x1)return[c,px(x0),Y0,px(x0),Y1];if(y0===y1)return[c,X0,py(y0),X1,py(y0)]}
+    return[c,X0,Y0,X1,Y1]});
   M.routes=M.routes.map(r=>r.map(([x,y])=>[px(x),py(y)]));M.labels=M.labels.map(([x,y,...o])=>[x*sx,y*sy,...o]);M.cols=C;M.rows=R}
-const WM={m_brest:1.5,m_dubos:2.2,m_stz:2.7,m_ponyri:1.6,m_seelow:1.9};
+const WM={m_brest:1.5,m_dubos:2.2,m_stz:1.9,m_ponyri:1.35,m_seelow:1.6};
 for(const m of CAMP){MAPS[m.id]=m.map;scaleMap(m.map,1.2);prepMap(m.map);for(const k of m.map.set){const[x,y]=k.split(',').map(Number);if('bhfRm'.includes(m.map.terr[y][x]))m.map.terr[y][x]='.'}
   SCEN[m.id]={camp:1,waveMul:WM[m.id]||1,rew:1.1/(WM[m.id]||1),title:m.title,year:m.date,sides:[m.side,m.side==='su'?'de':'su'],blurb:m.story,money:m.money,waves:m.waves,top:m.top,maxTier:m.maxTier,allow:m.allow||null,mod:m.mod||{},weather:m.weather,radio:m.radio}}
 const CKEY='frontlinie-camp-v1';
