@@ -1776,6 +1776,23 @@ function drawFallen0(c,side,v,st,lk){
   else{la1=J(splay?-1.9:-1.1,splay?.7:.5);la2=J(splay?-1.6:-.6,splay?.9:.7);ra1=J(splay?1.9:1.1,splay?.7:.5);ra2=J(splay?1.6:.6,splay?.9:.7);
     ll1=J(P+(splay?.55:.2),.35*sp+.1);ll2=J(P+(splay?.7:.25),.5*sp+.1);rl1=J(P-(splay?.55:.2),.35*sp+.1);rl2=J(P-(splay?.7:.25),.5*sp+.1)}
   if(curl){ll1=J(P-.4,.3);ll2=J(-.9,.4);rl1=J(P+.4,.3);rl2=J(.9,.4)}
+  // Mehr Haltungen: je nach Variante andere Arm- und Beinstellung (rechts = +y, links gespiegelt)
+  if(!curl&&!wire&&!FPOSE){const pk=((v||0)*5+(lk||0)*3)%10,mir=gp()<.5,j=.18;
+    const A=(r1,r2,l1,l2)=>{if(mir){[r1,l1]=[-l1,-r1];[r2,l2]=[-l2,-r2]}ra1=J(r1,j);ra2=J(r2,j);la1=J(l1,j);la2=J(l2,j)};
+    if(pk===1)A(1.75,1.5,-1.75,-1.5);                       // beide Arme weit ausgestreckt
+    else if(pk===2)A(1.5,1.25,-(P-.22),-(P-.1));            // ein Arm raus, einer am Körper
+    else if(pk===3&&up)A(1.25,.85,-(P-.4),1.2);             // eine Hand auf der Brust
+    else if(pk===4&&up)A(P-.35,-1.25,-(P-.35),1.25);        // beide Hände auf der Brust
+    else if(pk===5)A(.38,.15,-.38,-.15);                    // Arme über den Kopf gestreckt
+    else if(pk===6)A(P-.25,P-.1,-(P-.25),-(P-.1));          // Arme am Körper
+    else if(pk===7)A(.3,.05,-1.6,-2.1);                     // ein Arm nach vorn, einer angewinkelt
+    else if(pk===8){la1=J(-1.3,.4);la2=J(-.4,.5);ra1=J(1.5,.3);ra2=J(2.4,.5);ll1=J(P-.4,.3);ll2=J(-.9,.4);rl1=J(P+.4,.3);rl2=J(.9,.4)} // zusammengekrümmt
+    else if(pk===9)A(2.3,2.9,-1.2,-.5);                     // ein Arm unter dem Körper hervor, einer angewinkelt
+    if(pk!==8){const lg=gp();
+      if(lg<.25){ll1=J(P+.1,.06);ll2=J(P+.08,.08);rl1=J(P-.1,.06);rl2=J(P-.08,.08)}            // Beine gestreckt beieinander
+      else if(lg<.5){if(gp()<.5){rl1=J(P-.75,.2);rl2=J(P+.55,.25)}else{ll1=J(P+.75,.2);ll2=J(P-.55,.25)}} // ein Knie angewinkelt
+      else if(lg<.65){ll1=J(P+.55,.15);ll2=J(P+.6,.2);rl1=J(P-.55,.15);rl2=J(P-.6,.2)}         // Beine gespreizt
+      else if(lg<.78){const sg=gp()<.5?1:-1;ll1=J(P+sg*.7,.15);ll2=J(P+sg*1.6,.2);rl1=J(P+sg*.45,.15);rl2=J(P+sg*1.3,.2)}}} // beide Knie zur Seite
   if(FPOSE){({la1,la2,ra1,ra2,ll1,ll2,rl1,rl2}=FPOSE)}
   LEG('legL',[-.16,-.024],ll1,ll2);LEG('legR',[-.16,.024],rl1,rl2);
   // ---- Rumpf: Schultern breiter als Taille
