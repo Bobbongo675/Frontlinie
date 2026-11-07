@@ -1288,7 +1288,7 @@ function update(dt){
     }
   }
   G.shells=G.shells.filter(s=>!s.done);
-  for(const st of G.strikes){st.t-=dt;if(st.t<=0){st.done=1;if(st.bomb){for(const t of [...G.towers])if(!TD[t.type].obstacle&&Math.hypot(t.cx-st.x,t.cy-st.y)<.75)damageTower(t,st.dmg);impact(st.x,st.y,st.cal,'he');impactSound(st.cal,st.x,'he');continue}SRC={k:'blast',x:st.x,y:st.y,cal:st.cal};splash(st.x,st.y,st.big?1.4:.95,st.big?160:85,st.big?8:4,false,null);SRC=null;if(st.big)addShake(.05);impact(st.x,st.y,st.cal,'he');impactSound(st.cal,st.x,'he')}}
+  for(const st of G.strikes){st.t-=dt;if(st.t<=0){st.done=1;if(st.bomb){for(const t of [...G.towers])if(!TD[t.type].obstacle&&Math.hypot(t.cx-st.x,t.cy-st.y)<.75)damageTower(t,st.dmg);impact(st.x,st.y,st.cal,'he');impactSound(st.cal,st.x,'he');continue}SRC={k:'blast',x:st.x,y:st.y,cal:st.cal};splash(st.x,st.y,st.big?1.4:.95,st.big?160:85,st.big?50:30,false,null);SRC=null;if(st.big)addShake(.05);impact(st.x,st.y,st.cal,'he');impactSound(st.cal,st.x,'he')}}
   compact(G.strikes,s=>!s.done);
   for(const tx of G.texts)tx.t+=dt;compact(G.texts,tx=>tx.t<tx.T);
   const wx=G.wind.x,wy=G.wind.y;
@@ -1350,9 +1350,9 @@ function infAT(t,s,dt){const v=parOf(G.side,'inf',t.lvl);if(!v.at)return;t.atT=(
     for(let i=0;i<3;i++)part('smoke',rx,ry,.12,{vx:-Math.cos(a)*.7,vy:-Math.sin(a)*.7,col:'#c8c3b5',T:1.6});
     for(let i=1;i<6;i++){const f=i/6;later(f*.18,()=>part('smoke',sx+(tg.x-sx)*f,sy+(tg.y-sy)*f,.05,{col:'#bdb8aa',T:.9,vz:.03}))}
     G.tracers.push({x1:sx,y1:sy,x2:tg.x,y2:tg.y,t:.12,w:.035});rocketSound('nw',t.cx);
-    later(.18,()=>{if(tg.dead)return;SRC={k:'bullet',x:sx,y:sy,cal:88};hit(tg,95,9);SRC=null;impact(tg.x,tg.y,60,'ap')})}
+    later(.18,()=>{if(tg.dead)return;SRC={k:'bullet',x:sx,y:sy,cal:88};hit(tg,95,108);SRC=null;impact(tg.x,tg.y,60,'ap')})}
   else{t.atT=2.1+Math.random()*.5;G.fx.push({type:'muzzle',x:sx+Math.cos(a)*.1,y:sy+Math.sin(a)*.1,a,r:.1,t:0,T:.06});part('smoke',sx,sy,.06,{col:'#c4bfb2',T:1});
-    G.tracers.push({x1:sx,y1:sy,x2:tg.x,y2:tg.y,t:.06,w:.02});SRC={k:'bullet',x:sx,y:sy,cal:14.5};hit(tg,30,5);SRC=null;shotSound('hmg',G.side,t.cx,1)}}
+    G.tracers.push({x1:sx,y1:sy,x2:tg.x,y2:tg.y,t:.06,w:.02});SRC={k:'bullet',x:sx,y:sy,cal:14.5};hit(tg,30,40);SRC=null;shotSound('hmg',G.side,t.cx,1)}}
 function rifleVolley(t,v){const n=v.n||3,ord=[...Array(n).keys()].sort(()=>Math.random()-.5);
   ord.forEach((i,k)=>{const y=(i-(n-1)/2)*.15,x=(i%2?-.05:.02),d=k*.08+Math.random()*.03;
     later(d,()=>{if(!G.towers.includes(t))return;const[mx,my]=locXY(t,x+.135,y),ca=Math.cos(t.ang),sa=Math.sin(t.ang);
@@ -1466,8 +1466,8 @@ function enemyAttack(e,dt){
 }
 function mineBoom(m,e){
   m.cool=.3;m.charges--;
-  if(e.D.veh){SRC={k:'blast',x:m.cx,y:m.cy,cal:90};hit(e,170*(e.D.mineX||1),e.D.mineX?16:12);SRC=null}
-  else{SRC={k:'blast',x:m.cx,y:m.cy,cal:80};splash(e.x,e.y,.5,48,2,false,null);SRC=null}
+  if(e.D.veh){SRC={k:'blast',x:m.cx,y:m.cy,cal:90};hit(e,170*(e.D.mineX||1),e.D.mineX?200:150);SRC=null}
+  else{SRC={k:'blast',x:m.cx,y:m.cy,cal:80};splash(e.x,e.y,.5,48,20,false,null);SRC=null}
   impact(e.x,e.y,90,'he');impactSound(90,e.x,'he');
   if(m.charges<=0)removeTower(m);
   if(G.sel===m)renderTray();
@@ -3321,7 +3321,7 @@ function renderTray(){
     const wtxt={gren:'Stürmt Stellungen mit Handgranaten.',mg:'Beschießt Stellungen mit MG.',gun:'Beschießt Stellungen mit der Kanone.',bomb:'Wirft Bomben auf Stellungen.',strafe:'Greift Stellungen im Tiefflug an.',dive:'Stürzt sich auf deine wertvollste Stellung.'}[W.w]||'';
     body.innerHTML=`<div class="info"><div class="iname">${UNAMES[G.enemy][e.k]}</div>
       <div class="hpbar"><i class="${e.hp/e.max<.4?'low':''}" style="width:${Math.max(0,e.hp/e.max*100)}%"></i></div>
-      <div class="chips"><span><em>Leben</em>${Math.ceil(e.hp)}/${Math.round(e.max)}</span><span><em>Panzerung</em>${e.arm}</span><span><em>Tempo</em>${fmt(D.spd)}</span>${e.air?'<span><em>Ziel</em>Flugzeug</span>':''}</div>
+      <div class="chips"><span><em>Leben</em>${Math.ceil(e.hp)}/${Math.round(e.max)}</span><span><em>Panzerung</em>${e.D.veh?Math.round(e.arm)+'/'+Math.round(e.armS??e.arm)+' mm':'–'}</span><span><em>Tempo</em>${fmt(D.spd)}</span>${e.air?'<span><em>Ziel</em>Flugzeug</span>':''}</div>
       <div class="adesc">${need}. ${ENDESC[e.k]||wtxt}${e.air?' Nur Flak und MGs können es treffen. Flieger kosten keine Stellungsstärke, greifen aber Stellungen an.':''}</div></div>`;
   }else if(G.sel){
     const t=G.sel,d=TD[t.type],name=nameOf(G.side,t.type,t.lvl),cal=calOf(G.side,t.type,t.lvl);
@@ -3337,7 +3337,7 @@ function renderTray(){
     }else if(d.noFire){html+=obsCard(t);
     }else{
       const s=stats(t),T=TERR[terrAt(t.x,t.y)];
-      html+=`<div class="chips"><span><em>Reichw.</em>${s.range>=500?'ganze Karte':fmt(s.range)}${T.range>1?' <span class="good">Höhe</span>':''}</span><span><em>Schaden</em>${Math.round(s.dmg)}</span><span><em>Durchschl.</em>${fmt(s.pen)}</span><span><em>Takt</em>${fmt(s.rate)}/s</span><span><em>Leben</em>${Math.ceil(t.hp)}/${Math.round(t.max)}</span>${coverOf(t)<1?`<span><em>Deckung</em>${Math.round((1-coverOf(t))*100)} %</span>`:''}${s.salvo?`<span><em>Salve</em>${s.salvo}×</span>`:''}</div>`;
+      html+=`<div class="chips"><span><em>Reichw.</em>${s.range>=500?'ganze Karte':fmt(s.range)}${T.range>1?' <span class="good">Höhe</span>':''}</span><span><em>Schaden</em>${Math.round(s.dmg)}</span><span><em>Durchschl.</em>${penLabel(t,s)}</span><span><em>Takt</em>${fmt(s.rate)}/s</span><span><em>Leben</em>${Math.ceil(t.hp)}/${Math.round(t.max)}</span>${coverOf(t)<1?`<span><em>Deckung</em>${Math.round((1-coverOf(t))*100)} %</span>`:''}${s.salvo?`<span><em>Salve</em>${s.salvo}×</span>`:''}</div>`;
       html+=`<div class="seg"><span class="lbl">Munition</span>${d.ammo.map(a=>`<button data-ammo="${a}" class="${t.ammo===a?'on':''}">${AM[a].n}</button>`).join('')}</div>`;
       html+=`<div class="seg"><span class="lbl">Ziel</span>${PRIO.map(([k,n])=>`<button data-prio="${k}" class="${t.prio===k?'on':''}">${n}</button>`).join('')}</div>`;
       html+=`<div class="adesc">${AM[t.ammo].d}</div>`+towerExtra(t);
@@ -3702,9 +3702,9 @@ function updHQ(dt){if(!G.hq)hqInit();const H=G.hq,W=HQW[G.side][H.w];H.rec=Math.
   if(H.cd<=0&&Math.abs(df)<.3){H.cd=1/W.rate;H.rec=1;const ca=Math.cos(H.ang),sa=Math.sin(H.ang),mx=x+ca*.28,my=y+sa*.28;
     G.fx.push({type:'muzzle',x:mx,y:my,a:H.ang,r:Math.min(.3,.08+cal/430),t:0,T:.05});if(Math.random()<.6)part('smoke',mx,my,.04,{vx:ca*.3,vy:sa*.3,col:'#c4bfb2',T:.9,vz:.04});
     G.tracers.push({x1:mx,y1:my,x2:best.x+(Math.random()-.5)*.06,y2:best.y+(Math.random()-.5)*.06,t:.05,w:cal>15?.03:.02});
-    SRC={k:'bullet',x:mx,y:my,cal};hit(best,W.dmg*(best.air?W.air:1),W.pen);SRC=null;shotSound(W.t,G.side,x,W.l)}
+    SRC={k:'bullet',x:mx,y:my,cal};hit(best,W.dmg*(best.air?W.air:1),W.pen*8);SRC=null;shotSound(W.t,G.side,x,W.l)}
   if(W.sniper){H.sn-=dt;if(H.sn<=0){H.sn=2.2+Math.random();let t=null,td=3.6;for(const e of G.enemies){if(e.dead||e.air||e.D.veh)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<td){td=d;t=e}}
-    if(t){const a=Math.atan2(t.y-y,t.x-x),sx=x-.2,sy=y+.18;G.fx.push({type:'muzzle',x:sx,y:sy,a,r:.08,t:0,T:.05});G.tracers.push({x1:sx,y1:sy,x2:t.x,y2:t.y,t:.05,w:.014});SRC={k:'bullet',x:sx,y:sy,cal:7.92,zone:'head'};hit(t,60,1);SRC=null;shotSound('inf',G.side,x,3)}}}}
+    if(t){const a=Math.atan2(t.y-y,t.x-x),sx=x-.2,sy=y+.18;G.fx.push({type:'muzzle',x:sx,y:sy,a,r:.08,t:0,T:.05});G.tracers.push({x1:sx,y1:sy,x2:t.x,y2:t.y,t:.05,w:.014});SRC={k:'bullet',x:sx,y:sy,cal:7.92,zone:'head'};hit(t,60,8);SRC=null;shotSound('inf',G.side,x,3)}}}}
 // Stoßtrupps können das Hauptquartier nicht stürmen; Durchbrüche kosten wie bisher Stellungsstärke
 // Geometrie: Front zeigt zur ankommenden Straße, Ausbaufelder links/rechts davon
 function hqGeom(){const M=G.M;if(M._hqg)return M._hqg;const t=M.paths[0].tiles,p=t[t.length-2].split(',').map(Number),dx=M.hq.x-p[0],dy=M.hq.y-p[1],rot=Math.atan2(dy,dx)-Math.PI/2;
@@ -3725,7 +3725,7 @@ function updSideGuns(dt){if(!G.hq||G.state!=='wave')return;const side=G.side,cal
     const ca=Math.cos(s.ang),sa=Math.sin(s.ang),L=s.ring?.22:.06,mx=s.x+ca*L,my=s.y+sa*L;
     G.fx.push({type:'muzzle',x:mx,y:my,a:s.ang,r:.09,t:0,T:.05});if(Math.random()<.4)part('smoke',mx,my,.035,{vx:ca*.3,vy:sa*.3,col:'#c4bfb2',T:.8,vz:.04});
     G.tracers.push({x1:mx,y1:my,x2:best.x+(Math.random()-.5)*.08,y2:best.y+(Math.random()-.5)*.08,t:.05,w:.018});
-    SRC={k:'bullet',x:mx,y:my,cal};hit(best,4*(best.air?.3:1),1);SRC=null;if(s.burst%2)shotSound('mg',side,s.x,1)}}
+    SRC={k:'bullet',x:mx,y:my,cal};hit(best,4*(best.air?.3:1),8);SRC=null;if(s.burst%2)shotSound('mg',side,s.x,1)}}
 function drawSideGuns(c){if(!G.hq)return;const side=G.side;for(const s of hqSideGuns()){if(!s.ring)continue;const ca=Math.cos(s.ang),sa=Math.sin(s.ang),r=s.rec*.012;
   c.save();c.translate(s.x-ca*r,s.y-sa*r);c.rotate(s.ang);c.scale(1.4,1.4);
   Ln(c,.0,.02,.16,.02,'rgba(0,0,0,.3)',.014);Ln(c,-.02,0,.16,0,'#1c1c19',.013);box(c,-.03,-.016,.09,.032,'#34342e',.008);Ln(c,.06,0,.12,0,'#4a4a42',.02);
@@ -4527,7 +4527,7 @@ const BIGMAPS={
   areas:[['w',0,2,14,2],['m',0,5,2,8],['m',11,4,14,7],['m',6,9,7,10],['m',12,10,14,11],['m',0,11,1,12],['h',0,15,3,17],['h',11,15,14,17],['h',6,15,7,16],['b',1,20,2,20],['b',12,20,13,20],['b',4,23,4,23],['b',10,22,10,23],['b',1,23,1,23],['f',0,25,2,25],['f',12,24,14,25],['R',8,21,8,21]],
   routes:[[[4,-1],[4,12],[5,12],[5,19],[7,19],[7,26]],[[10,-1],[10,12],[9,12],[9,19],[7,19],[7,26]]],fords:[]}};
 for(const m of CAMP)if(BIGMAPS[m.id])m.map=BIGMAPS[m.id];
-const WM={m_brest:1.3,m_dubos:1.1,m_stz:1.45,m_ponyri:1.55,m_seelow:1.5};
+const WM={m_brest:1.0,m_dubos:0.85,m_stz:0.85,m_ponyri:0.85,m_seelow:0.95};
 for(const m of CAMP){MAPS[m.id]=m.map;if(!m.map.big)scaleMap(m.map,1.2);prepMap(m.map);for(const k of m.map.set){const[x,y]=k.split(',').map(Number);if('bhfRm'.includes(m.map.terr[y][x]))m.map.terr[y][x]='.'}
   SCEN[m.id]={camp:1,waveMul:WM[m.id]||1,rew:1.3/Math.sqrt(WM[m.id]||1),title:m.title,year:m.date,sides:[m.side,m.side==='su'?'de':'su'],blurb:m.story,money:m.money,waves:m.waves,top:m.top,maxTier:m.maxTier,allow:m.allow||null,mod:m.mod||{},weather:m.weather,radio:m.radio}}
 const CKEY='frontlinie-camp-v1';
@@ -4637,7 +4637,7 @@ const _rt3=renderTray;renderTray=function(){const tray=$('#tray');
     if(h){const L=bs?G.next:G.enemies.filter(e=>!e.dead&&!e.fixed).map(e=>e.k).concat(G.q);const c={};(L||[]).forEach(q=>c[q]=(c[q]||0)+1);
       h.textContent=(bs?'Nächste: ':'')+Object.keys(c).sort((a,b)=>c[b]-c[a]).slice(0,3).map(q=>c[q]+'× '+UNAMES[G.enemy][q]).join(' · ')||'Feld frei'}}
   if(G.sheet===2){tray.querySelectorAll('.gcard').forEach(b=>{const gr=BGRP.find(x=>x.it.includes(b.dataset.build)||x.id===b.dataset.grp);if(gr&&ROLE[gr.id]&&!b.querySelector('.gr'))b.insertAdjacentHTML('beforeend',`<span class="gr">${ROLE[gr.id]}</span>`)});
-    tray.querySelectorAll('.card[data-build]').forEach(b=>{const d=TD[b.dataset.build];if(!d||d.obstacle||d.noFire||b.querySelector('.cs'))return;b.insertAdjacentHTML('beforeend',`<span class="cs">Reichw. ${d.range>=500?'Karte':fmt(d.range)} · Durchschl. ${fmt(d.pen)}</span>`)})}
+    tray.querySelectorAll('.card[data-build]').forEach(b=>{const d=TD[b.dataset.build];if(!d||d.obstacle||d.noFire||b.querySelector('.cs'))return;b.insertAdjacentHTML('beforeend',`<span class="cs">Reichw. ${d.range>=500?'Karte':fmt(d.range)} · Durchschl. ${(()=>{const p=penOf(G.side,b.dataset.build,1,d.ammo&&d.ammo[0]);return p?Math.round(p[0])+' mm':'–'})()}</span>`)})}
   updateInsets()};
 function setDetent(v){G.sheet=Math.max(0,Math.min(2,v));if(homeState())G.sheetHome=G.sheet;renderTray()}
 // Tippen und Ziehen an der Leiste
@@ -4770,6 +4770,111 @@ function addRptBtn(row){if(!row||row.querySelector('.rptb'))return;const b=docum
   .rpre{white-space:pre-wrap;font:12px/1.35 ui-monospace,Menlo,monospace;background:var(--panel);border:1px solid var(--line);padding:8px;max-height:45vh;overflow:auto;width:100%;box-sizing:border-box;margin:0}
   .rta{width:100%;height:120px;font:11px ui-monospace,monospace}`;document.head.appendChild(st)})();
 window.__rpt=()=>rptData();
+
+/* ===================== v91: Panzerung und Durchschlag in Millimetern, echte Panzertypen, Gegnerverhalten ===================== */
+// Werte aus Quellen (siehe Chat), mit * markiert = geschätzt. Durchschlag: [ganz nah (100 m), am Rand der Reichweite (1000 m)].
+// Panzerung je Fahrzeug: Front, Seite, Heck. Geneigte Fronten (T-34, Panther, IS-2, SU-122) als geschätzte wirksame Stärke.
+const ARMM={
+ de:{car:[0,0,0],apc:[14.5,8,8],recon:[0,0,0],goliath:[10,5,5,1],ltank:[35,15,15],ptank:[50,30,25,1],mtank:[80,30,20],panther:[120,45,40,1],htank:[100,70,80],sturm:[80,30,30],boss:[200,80,80],ebat:[0,0,0]},
+ su:{car:[12,9,9,1],apc:[0,0,0],recon:[0,0,0],goliath:[0,0,0],ltank:[35,15,15],ptank:[90,75,70,1],mtank:[75,40,40,1],htank:[160,90,60,1],sturm:[70,40,40,1],boss:[75,60,60],ebat:[0,0,0]}};
+// Lebenspunkte als „Durchschläge bis zum Ausfall“: Pak Stufe 1/2/3 macht 95/152/237 Schaden pro Durchschlag
+const HPM={de:{car:75,apc:150,recon:45,goliath:40,ltank:160,ptank:300,mtank:450,panther:650,htank:700,sturm:420,boss:1200},
+           su:{car:90,apc:150,recon:45,goliath:40,ltank:160,ptank:650,mtank:450,htank:800,sturm:420,boss:1100}};
+const PENM={ // je Stufe [nah, fern, geschätzt]
+ de:{mg:[[8,3,1],[8,3,1],[8,3,1]],hmg:[[8,3,1],[8,3,1],[22,10,1]],inf:[[8,3,1],[8,3,1],[8,3,1]],
+     flakl:[[22,10,1],[22,10,1],[40,25,1]],flakh:[[120,99,1],[190,165,1],[150,135,1]],pak:[[34,23,1],[90,62,1],[99,81,0]]},
+ su:{mg:[[8,3,1],[8,3,1],[8,3,1]],hmg:[[8,3,1],[8,3,1],[20,12,1]],inf:[[8,3,1],[8,3,1],[8,3,1]],
+     flakl:[[8,3,1],[20,12,1],[35,20,1]],flakh:[[90,70,1],[95,75,1],[135,107,1]],pak:[[55,35,1],[65,45,1],[100,80,1]]}};
+const HE_MM=.25,AP_ARC=.55; // Spreng: Kaliber × 0,25 mm; Panzergranate aus Haubitzen: Kaliber × 0,55 mm (beides geschätzt)
+function penOf(side,type,lvl,ammo){const d=TD[type];if(!d||d.obstacle)return null;const cal=mmOf(side,type,lvl)||0,P=(PENM[side]||PENM.de)[type];
+  if(d.kind==='arc'){if(ammo==='shr'||ammo==='smoke')return[0,0,1];if(ammo==='ap')return[cal*AP_ARC,cal*AP_ARC,1];return[cal*HE_MM,cal*HE_MM,1]}
+  if(ammo==='pakhe'||ammo==='tz')return[cal*HE_MM,cal*HE_MM,1];
+  let p=P?P[lvl-1].slice():[8,3,1];
+  if(ammo==='apmg')p=[p[0]*1.6,p[1]*1.6,1];
+  if(ammo==='hvap'){p=(side==='de'&&lvl===3)?[125,87,1]:[p[0]*1.35,p[1]*1.1,1]}
+  return p}
+// Stats: Durchschlag in mm (nah/fern)
+const _stats87=stats;stats=function(t){const s=_stats87(t);const p=penOf(G.side,t.type,t.lvl,t.ammo);if(p){s.pen=p[0];s.pen2=p[1];s.penEst=!!p[2]}return s};
+// Direktfeuer: Durchschlag fällt mit der Entfernung vom nahen auf den fernen Wert
+const _fire87=fire;fire=function(t,d,s,e){if(TD[t.type].kind!=='arc'&&s.pen2!=null&&e){const f=Math.min(1,Math.hypot(e.x-t.cx,e.y-t.cy)/Math.max(.5,s.range));s.pen=s.pen+(s.pen2-s.pen)*f}_fire87(t,d,s,e)};
+// Panzerung je Trefferrichtung: Front, Seite, Heck. Bogenfeuer trifft die Oberseite (halbe Seitenstärke, geschätzt).
+armAt=function(e){if(!e.D.veh)return 0;const F=e.arm,S=e.armS!=null?e.armS:F,R=e.armR!=null?e.armR:S;
+  if(!SRC||SRC.x==null)return F;if(SRC.k!=='bullet')return SRC.k==='blast'?S*.5:F;
+  const a=Math.atan2(SRC.y-e.y,SRC.x-e.x)-e.ang-(e.hullOff||0),cf=Math.cos(a);return cf>.5?F:cf<-.6?R:S};
+// Durchschlag gegen Panzerung: deutlich darüber = voll, knapp = Teildurchschlag, darunter = Abpraller (Sprenggranaten: nur Splitter)
+penMul=function(pen,arm){if(arm<=0)return 1;const r=pen/arm,B=SRC&&SRC.k==='bullet';
+  if(r>=1.1)return 1;if(r>=.9)return B&&(SRC.cal||8)<15?.25:.5;return B?0:.08};
+// Feste Durchschläge der übrigen Quellen von Stufen auf mm umrechnen (Minen, Nebelwerfer-Direktschuss, Häuser)
+const ABS2MM=12;
+// Fahrzeuge beim Erscheinen: Panzerung in mm, Leben nach Typ, keine Zähigkeit mehr durch Wellenzahl
+const _spawn87=spawn;spawn=function(k,d0,pi){const e=_spawn87(k,d0,pi);if(e.D.veh&&!e.air){const A=(ARMM[G.enemy]||{})[k],H=(HPM[G.enemy]||{})[k];
+  if(A){e.arm=A[0];e.armS=A[1];e.armR=A[2]}else{e.arm=(e.D.arm||0)*ABS2MM;e.armS=(e.D.armS!=null?e.D.armS:Math.max(0,e.D.arm-2))*ABS2MM}
+  if(H){e.max=e.hp=H*(G.prepMul||1)}}if(e.air)e.arm=0;return e};
+
+// ---------- Neue Panzertypen ----------
+ED.ptank={hp:300,spd:.85,arm:5,rew:27,lives:2,pts:32,veh:1,tank:1,L:.54,W:.36,atk:28,gap:1.5};
+ED.panther={hp:650,spd:.72,arm:10,rew:62,lives:4,pts:72,veh:1,tank:1,L:.68,W:.46,atk:55,gap:2};
+ED.ptank.wpn={w:'gun',r:4.2,rate:.4,dmg:9.5};ED.panther.wpn={w:'gun',r:5.8,rate:.33,dmg:22};
+UNLOCK.ptank=6;UNLOCK.panther=15;
+UNAMES.de.ptank='Panzer III';UNAMES.de.panther='Panther';UNAMES.su.ptank='KV-1';
+VSPEC.de.ptank={k:'tank',L:.54,W:.36,tur:'box',tr:.12,tx:.02,bl:.26,bw:.035,cup:1};
+VSPEC.de.panther={k:'tank',L:.68,W:.46,tur:'box',tr:.15,tx:-.05,bl:.54,bw:.045,mb:1,cup:1,slope:1,skirt:1};
+VSPEC.su.ptank={k:'tank',L:.64,W:.44,tur:'box',tr:.17,tx:.0,bl:.32,bw:.045};
+for(const s of['us','jp'])if(VSPEC[s]){VSPEC[s].ptank=VSPEC[s].mtank;VSPEC[s].panther=VSPEC[s].htank;if(UNAMES[s]){UNAMES[s].ptank=UNAMES[s].mtank;UNAMES[s].panther=UNAMES[s].htank}}
+VSPEC.su.panther=VSPEC.su.htank;UNAMES.su.panther=UNAMES.su.htank;
+// In Wellen einmischen: Panzer III / KV-1 zwischen leichten und mittleren, Panther nur bei deutschen Gegnern
+const _mw87=makeWave;makeWave=function(n){const L=_mw87(n),AL=SCEN[G.scen].allow,TOP=SCEN[G.scen].top||25,nn=Math.max(1,Math.round(n*TOP/MAXW)),ok=k=>(!AL||AL.includes(k))&&UNLOCK[k]<=nn;
+  return L.map(k=>{const r=Math.random();if(k==='mtank'&&ok('ptank')&&r<.35)return'ptank';if(k==='ltank'&&ok('ptank')&&r<.3)return'ptank';
+    if(G.enemy==='de'&&(k==='htank'||k==='mtank')&&ok('panther')&&r<(k==='htank'?.4:.15))return'panther';return k})};
+// Missionen: Panzer III ab 1941, Panther nicht bei Ponyri (nur Nordfront), KV-1 nicht 1945
+for(const id of['m_brest','m_dubos','m_stz'])if(SCEN[id]&&SCEN[id].allow&&!SCEN[id].allow.includes('ptank'))SCEN[id].allow.push('ptank');
+if(SCEN.m_ponyri)SCEN.m_ponyri.allow=['inf','car','recon','apc','pio','goliath','ltank','ptank','mtank','htank','sturm','boss','fighter','bomber','attack'];
+if(SCEN.m_seelow)SCEN.m_seelow.allow=['inf','car','recon','apc','pio','ltank','mtank','htank','sturm','boss','fighter','bomber','attack'];
+
+// ---------- Gegnerverhalten ----------
+// Deckung: Trichter von Einschlägen, Schützenlöcher der Pioniere, Wald/Ruine/Kornfeld
+const _ng87=newGame;newGame=function(a,b,c){G&&(G.craters=[],G.holes=[],G.esmoke=[]);_ng87(a,b,c);G.craters=[];G.holes=[];G.esmoke=[]};
+const _impact87=impact;impact=function(x,y,cal,kind){_impact87(x,y,cal,kind);if(!G||!G.craters)return;
+  if(kind==='he'&&cal>=75){G.craters.push({x,y,r:.1+Math.min(.25,cal/1200)});if(G.craters.length>90)G.craters.shift()}
+  if(kind==='he'&&cal>=50)for(const e of G.enemies){if(e.dead||e.D.veh||e.air)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<1.4){e.fireT=3;e.off=Math.max(-.44,Math.min(.44,e.off+(Math.random()-.5)*.3))}}};
+function holeCover(e){let c=1;for(const h of G.holes||[])if(Math.hypot(h.x-e.x,h.y-e.y)<.3){c=.5;break}
+  if(c>.6)for(const q of G.craters||[])if(Math.hypot(q.x-e.x,q.y-e.y)<q.r+.06){c=.6;break}return c}
+function inSmoke(e){for(const s of G.esmoke||[])if(Math.hypot(s.x-e.x,s.y-e.y)<s.r)return true;return false}
+const _hit87=hit;hit=function(e,dmg,pen){
+  if(!e.D.veh&&!e.air){let f=holeCover(e);if(SRC&&SRC.k==='bullet'){const c=TERR[terrAt(Math.floor(e.x),Math.floor(e.y))];f*=(c&&c.cover)||1;if(e.prone>0)f*=.7}dmg*=f;if(SRC&&SRC.k==='bullet')e.fireT=2.5}
+  else if(e.D.tank&&e.halt>0&&SRC&&SRC.k==='bullet'){const c=terrAt(Math.floor(e.x),Math.floor(e.y));if(c==='h'||c==='f')dmg*=.75}
+  const h0=e.hp;_hit87(e,dmg,pen);
+  // Panzer nebeln sich ein, sobald die Panzerabwehr sie trifft (einmal)
+  if(e.D.tank&&!e.dead&&!e.smoked&&CUR&&(CUR.type==='pak'||CUR.type==='flakh')){e.smoked=1;const ax=Math.cos(e.ang),ay=Math.sin(e.ang);
+    G.esmoke.push({x:e.x+ax*.35,y:e.y+ay*.35,r:.85,t:9});for(let i=0;i<18;i++)part('smoke',e.x+ax*.35+(Math.random()-.5)*.9,e.y+ay*.35+(Math.random()-.5)*.9,.35+Math.random()*.25,{col:'#d2cdc0',T:7+Math.random()*3,vz:.05});
+    if(Math.random()<.5)floatText(e.x,e.y-.4,'Nebel','#d2cdc0')}};
+// Rauch blockiert Direktfeuer und Beobachtung
+const _canSee87=canSee;canSee=function(t,e){if(inSmoke(e))return false;return _canSee87(t,e)};
+const _upd87=update;update=function(dt){if(G&&G.esmoke&&G.esmoke.length){for(const s of G.esmoke)s.t-=dt;G.esmoke=G.esmoke.filter(s=>s.t>0)}_upd87(dt)};
+// Bewegung: sprungweises Vorgehen, Deckung suchen, Panzer halten und drehen die Front, Pioniere graben sich ein
+function nearestCover(e){let best=null,bd=1;
+  for(const q of(G.craters||[]).concat(G.holes||[])){const d=Math.hypot(q.x-e.x,q.y-e.y);if(d<bd){const a=pointAt(e.d,e.pi);const dx=q.x-a.x,dy=q.y-a.y;const ahead=dx*a.dx+dy*a.dy;if(ahead>-.1&&ahead<.9){bd=d;best=q}}}
+  if(!best){const a=pointAt(e.d+.3,e.pi);for(const[ox,oy]of[[1,0],[-1,0],[0,1],[0,-1]]){const x=Math.floor(a.x)+ox,y=Math.floor(a.y)+oy,c=terrAt(x,y);if(c==='f'||c==='R'||c==='g'){best={x:x+.5,y:y+.5};break}}}
+  return best}
+const _special87=special;special=function(e,dt){const r=_special87(e,dt);if(r)return r;
+  if(!e.D.veh&&!e.air){
+    if(e.fireT>0){e.fireT-=dt;const q=e.coverP||(e.coverP=nearestCover(e));
+      if(q){const a=pointAt(e.d,e.pi),nx=-a.dy,ny=a.dx,want=Math.max(-.45,Math.min(.45,(q.x-a.x)*nx+(q.y-a.y)*ny));e.off+=(want-e.off)*Math.min(1,dt*2.5)}
+      if(e.k!=='pio'&&G.t>(e.nextDrop||0)){e.prone=1.1+Math.random()*.5;e.nextDrop=G.t+e.prone+.9+Math.random()*.6}}
+    else e.coverP=null;
+    if(e.k==='pio'&&!e.dug&&e.d>G.M.paths[e.pi].len*(.3+((e.id*37)%40)/100)){if(e.digT==null)e.digT=3;e.digT-=dt;
+      if(e.digT<=0){e.dug=1;const a=pointAt(e.d,e.pi);G.holes.push({x:a.x-a.dy*(e.off||0)*1.2,y:a.y+a.dx*(e.off||0)*1.2});if(G.holes.length>40)G.holes.shift();stamp({k:'crater',x:a.x-a.dy*(e.off||0)*1.2,y:a.y+a.dx*(e.off||0)*1.2,r:.09,seed:e.id*7919})}
+      return e.digT>0}
+    return false}
+  if(e.D.tank&&!e.fixed&&e.k!=='sturm'&&e.k!=='boss'){
+    const by=e.by&&G.towers.includes(e.by)?e.by:null,R=(e.D.wpn&&e.D.wpn.r)||4;
+    if(e.halt>0){e.halt-=dt;if(by){const want=Math.atan2(by.cy-e.y,by.cx-e.x)-e.ang;let w=Math.atan2(Math.sin(want),Math.cos(want));w=Math.max(-1.2,Math.min(1.2,w));e.hullOff=(e.hullOff||0)+(w-(e.hullOff||0))*Math.min(1,dt*1.5)}return true}
+    if(e.hullOff)e.hullOff*=Math.pow(.2,dt);
+    if(by&&G.t>(e.haltCd||0)&&Math.hypot(by.cx-e.x,by.cy-e.y)<=R){e.halt=2.5+Math.random()*1.5;e.haltCd=G.t+9+Math.random()*4;return true}}
+  return false};
+// Zeichnen: Trichter, Schützenlöcher und Panzernebel
+// Anzeige: mm in den Karten
+function penLabel(t,s){if(s.pen==null)return'–';const n=Math.round(s.pen),f=Math.round(s.pen2??s.pen);return(TD[t.type].kind!=='arc'&&f!==n?n+'→'+f:n)+' mm'+(s.penEst?'*':'')}
 
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
 
