@@ -4692,6 +4692,73 @@ function fallHit(x,y,r,dmg,f){for(const t of G.towers.slice()){if(f&&f.hitT&&f.h
 const _crash=crash;crash=function(f){_crash(f);fallHit(f.x,f.y,f.big?1:.75,f.big?95:60,null)};
 const _updFalls=updFalls;updFalls=function(dt){if(G.falls)for(const f of G.falls)if(f.slide&&f.sp>.2)fallHit(f.x,f.y,.45,f.big?45:30,f);_updFalls(dt)};
 
+/* ===================== v86: Splash nur noch voll gegen Infanterie im Freien ===================== */
+// Fahrzeuge nehmen Splash nur bei einem Einschlag sehr nah dran voll, sonst nur Splitter (15 %). Infanterie in Deckung oder liegend nimmt weniger.
+splash=function(x,y,r,dmg,pen,air,skip){
+  for(const e of G.enemies){if(e.dead||e===skip||e.air!==air)continue;const d=Math.hypot(e.x-x,e.y-y);if(d>=r)continue;let m=1-.6*d/r;
+    if(!air){if(e.D.veh){const near=.25+(e.D.L||.4)*.35;if(d>near)m*=.15}
+      else{const c=TERR[terrAt(Math.floor(e.x),Math.floor(e.y))];m*=(c&&c.cover)||1;if(e.prone>0)m*=.6}}
+    hit(e,dmg*m,pen)}};
+
+/* ===================== Spielbericht: Rundendetails zum Auswerten ===================== */
+// Je Welle: Gegner (gekommen, vernichtet, durchgebrochen), Schaden und Abschüsse je Waffe, Schüsse, Abpraller, Ausgaben, Verluste.
+const RPT={cur:null,waves:[],meta:null};
+const rk=(o,k,v)=>{o[k]=(o[k]||0)+(v==null?1:v)};
+function rptStart(){const w={w:G.wave,wetter:G.weather,geld0:G.money,leben0:G.lives,t0:G.t,feind:{},tot:{},durch:{},abschuss:{},schaden:{},schadenGegen:{},schuesse:{},abpraller:{},
+  stellungTreffer:{},verlorenStellung:{},absturzSchaden:0,flieger:0,ausgaben:{},stellungen:{}};
+  for(const k of G.q||[])rk(w.feind,k);for(const t of G.towers)w.stellungen[t.type+t.lvl+(t.fort?'b'+t.fort:'')]=(w.stellungen[t.type+t.lvl+(t.fort?'b'+t.fort:'')]||0)+1;
+  const s1={};for(const t of G.towers)rk(s1,t.type,t.spent||0);for(const k in s1){const d=s1[k]-((RPT.spent0||{})[k]||0);if(d>0)w.ausgaben[k]=d}RPT.cur=w}
+function rptSnap(){RPT.spent0={};for(const t of G.towers)rk(RPT.spent0,t.type,t.spent||0)}
+function rptEnd(){const w=RPT.cur;if(!w)return;w.dauer=Math.round(G.t-w.t0);w.geld1=G.money;w.leben1=G.lives;w.verlust=w.leben0-w.leben1;
+  for(const k in w.schaden)w.schaden[k]=Math.round(w.schaden[k]);for(const k in w.stellungTreffer)w.stellungTreffer[k]=Math.round(w.stellungTreffer[k]);w.absturzSchaden=Math.round(w.absturzSchaden);
+  for(const k in w.schadenGegen){const o=w.schadenGegen[k];for(const q in o)o[q]=Math.round(o[q])}
+  RPT.waves.push(w);RPT.cur=null;try{localStorage.setItem('frontlinie-bericht',JSON.stringify(rptData()))}catch(e){}}
+function rptData(){return{v:1,karte:G.scen,seite:G.side,gegner:G.enemy,wellen:MAXW,ergebnis:G.over?(G.lives>0?'sieg':'niederlage'):'laufend',welle:G.wave,leben:G.lives,geld:G.money,
+  stellungen:G.towers.filter(t=>!TD[t.type].obstacle).map(t=>({typ:t.type,stufe:t.lvl,bef:t.fort||0,x:t.x,y:t.y,abschuesse:t.kills||0,schuss:t.shots||0,munition:t.ammo||null})),runden:RPT.waves}}
+// Messpunkte
+const _hitR=hit;hit=function(e,dmg,pen){const b=Math.max(0,e.hp);_hitR(e,dmg,pen);const w=RPT.cur;if(!w)return;const d=b-Math.max(0,e.hp);const by=CUR?CUR.type:(SRC&&SRC.k==='blast'?'mine/sonst':'sonst');
+  if(d>0){rk(w.schaden,by,d);(w.schadenGegen[by]||(w.schadenGegen[by]={}))[e.k]=((w.schadenGegen[by]||{})[e.k]||0)+d}
+  else if(CUR&&e.D.veh&&dmg>0)rk(w.abpraller,CUR.type+'→'+e.k)};
+const _killR=kill;kill=function(e){_killR(e);const w=RPT.cur;if(!w)return;rk(w.tot,e.k);const t=e.by;rk(w.abschuss,(t&&t.type)||'sonst')};
+const _leakR=leak;leak=function(e){const w=RPT.cur;if(w&&!e.dead&&!e.fixed){rk(w.durch,e.k);if(e.air)w.flieger++}_leakR(e)};
+const _dtR=damageTower;damageTower=function(t,dmg){const h=t.hp;_dtR(t,dmg);const w=RPT.cur;if(!w)return;rk(w.stellungTreffer,t.type,Math.max(0,h-Math.max(0,t.hp)));if(!G.towers.includes(t))rk(w.verlorenStellung,t.type)};
+const _fallHitR=fallHit;fallHit=function(x,y,r,dmg,f){const s=G.towers.reduce((a,t)=>a+t.hp,0);_fallHitR(x,y,r,dmg,f);if(RPT.cur)RPT.cur.absturzSchaden+=s-G.towers.reduce((a,t)=>a+Math.max(0,t.hp),0)};
+const _fireR=fire;fire=function(t,d,s,e){_fireR(t,d,s,e);if(RPT.cur)rk(RPT.cur.schuesse,t.type)};
+$('#go').addEventListener('click',()=>{if(G&&G.state==='wave'&&(!RPT.cur||RPT.cur.w!==G.wave))rptStart()});
+const _owe=onWaveEnd;onWaveEnd=function(){_owe();rptEnd();rptSnap()};
+const _ngR=newGame;newGame=function(a,b,c){_ngR(a,b,c);if(!c){RPT.waves=[];RPT.cur=null;RPT.spent0={}}else rptSnap()};
+const _endR=endGame;endGame=function(won){if(RPT.cur)rptEnd();_endR(won);addRptBtn($('#ovEnd .row'))};
+// Ausgaben in der Bauphase zählen zur folgenden Welle (Differenz der investierten Summe seit dem Ende der Welle davor)
+// Anzeige
+function rptText(){const D=rptData(),L=[];const nm=k=>(UNAMES[G.enemy]&&UNAMES[G.enemy][k])||k;
+  L.push(`Spielbericht · ${SCEN[D.karte]?SCEN[D.karte].title:D.karte} · ${SIDES[D.seite].name} · ${D.ergebnis} · Welle ${D.welle}/${D.wellen} · Stellungsstärke ${D.leben}`);
+  for(const w of D.runden){const f=o=>Object.entries(o).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${k} ${v}`).join(', ')||'–';
+    L.push(`\nWelle ${w.w} (${w.dauer}s, ${WEATHER[w.wetter]?WEATHER[w.wetter].n:w.wetter}): −${w.verlust} Stärke, Nachschub ${w.geld0}→${w.geld1}`);
+    L.push(`  Gegner: ${Object.entries(w.feind).map(([k,v])=>v+'× '+nm(k)).join(', ')}`);
+    L.push(`  Durchgebrochen: ${Object.entries(w.durch).map(([k,v])=>v+'× '+nm(k)).join(', ')||'keine'}`);
+    L.push(`  Schaden je Waffe: ${f(w.schaden)}`);L.push(`  Abschüsse je Waffe: ${f(w.abschuss)}`);
+    if(Object.keys(w.abpraller).length)L.push(`  Abpraller: ${f(w.abpraller)}`);
+    L.push(`  Eigene Stellungen getroffen: ${f(w.stellungTreffer)}${Object.keys(w.verlorenStellung).length?' · verloren: '+f(w.verlorenStellung):''}${w.absturzSchaden?' · Absturzschaden '+w.absturzSchaden:''}`);
+    if(Object.keys(w.ausgaben).length)L.push(`  Ausgaben davor: ${f(w.ausgaben)}`)}
+  return L.join('\n')}
+function showRpt(){let o=$('#ovRpt');if(!o){o=document.createElement('div');o.className='ov';o.id='ovRpt';document.body.appendChild(o)}
+  const txt=rptText(),json=JSON.stringify(rptData());
+  o.innerHTML=`<div class="sheet rptsheet"><h1 class="brand"><small>${RPT.waves.length} Wellen erfasst</small>Spielbericht</h1>
+   <p class="lede" style="font-size:15px">Kopiere den Bericht und füge ihn im Chat ein. Er enthält jede Welle mit Gegnern, Schaden und Abschüssen je Waffe, Abprallern, Verlusten und Ausgaben.</p>
+   <div class="col"><button class="pri" data-r="json">Bericht kopieren</button><button data-r="txt">Als Text kopieren</button><button data-r="x">Schließen</button></div>
+   <p class="rmsg lbl" style="min-height:18px"></p><pre class="rpre">${txt.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</pre><textarea class="rta" readonly hidden></textarea></div>`;
+  o.hidden=false;const msg=o.querySelector('.rmsg'),ta=o.querySelector('.rta');
+  o.onclick=ev=>{const b=ev.target.closest('button');if(!b)return;const r=b.dataset.r;if(r==='x'){o.hidden=true;return}
+    const s=r==='json'?'FRONTLINIE-BERICHT '+json:txt;
+    const fb=()=>{ta.hidden=false;ta.value=s;ta.focus();ta.select();try{document.execCommand('copy');msg.textContent='Kopiert.'}catch(e){msg.textContent='Text ist markiert, bitte kopieren.'}};
+    try{navigator.clipboard.writeText(s).then(()=>{msg.textContent='Kopiert. Jetzt im Chat einfügen.'},fb)}catch(e){fb()}}}
+function addRptBtn(row){if(!row||row.querySelector('.rptb'))return;const b=document.createElement('button');b.className='rptb';b.textContent='Spielbericht';b.addEventListener('click',showRpt);row.appendChild(b)}
+(function(){const col=$('#ovMenu .col');if(col){const b=document.createElement('button');b.textContent='Spielbericht';b.addEventListener('click',()=>{$('#ovMenu').hidden=true;showRpt()});col.insertBefore(b,$('#mRestart'))}
+  const st=document.createElement('style');st.textContent=`.rptsheet .col{display:flex;flex-direction:column;gap:8px;width:100%}.rptsheet .col button{padding:12px;font-weight:700;font-size:16px;border:1px solid var(--line);background:var(--panel)}.rptsheet .col button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .rpre{white-space:pre-wrap;font:12px/1.35 ui-monospace,Menlo,monospace;background:var(--panel);border:1px solid var(--line);padding:8px;max-height:45vh;overflow:auto;width:100%;box-sizing:border-box;margin:0}
+  .rta{width:100%;height:120px;font:11px ui-monospace,monospace}`;document.head.appendChild(st)})();
+window.__rpt=()=>rptData();
+
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
 
 resize();buildStart();requestAnimationFrame(frame);
