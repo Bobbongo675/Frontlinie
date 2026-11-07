@@ -4849,6 +4849,8 @@ function holeCover(e){let c=1;for(const h of G.holes||[])if(Math.hypot(h.x-e.x,h
   if(c>.55&&G.wrecks)for(const w of G.wrecks)if(!w.plane&&w.kind!=='turpiece'&&Math.hypot(w.x-e.x,w.y-e.y)<.3){c=.5;break}return c}
 function inSmoke(e){for(const s of G.esmoke||[])if(Math.hypot(s.x-e.x,s.y-e.y)<s.r)return true;return false}
 const _hit87=hit;hit=function(e,dmg,pen){
+  // Volle Deckung: wer in einer Ruine, einem tiefen Trichter (ab 10,5 cm) oder einem Schützenloch liegt, ist gegen Gewehr- und MG-Feuer (unter 15 mm) geschützt
+  if(!e.D.veh&&!e.air&&e.holdT>0&&e.deep&&SRC&&SRC.k==='bullet'&&(SRC.cal||8)<15){e.fireT=2.5;if(Math.random()<.35)part('dust',e.x+(Math.random()-.5)*.25,e.y+(Math.random()-.5)*.25,.05,{col:e.dugIn==='R'?'#8a8278':'#7d6e55'});return}
   if(!e.D.veh&&!e.air){let f=holeCover(e)*(e.holdT>0?.7:1);if(SRC&&SRC.k==='bullet'){const c=TERR[terrAt(Math.floor(e.x),Math.floor(e.y))];f*=(c&&c.cover)||1;if(e.prone>0)f*=.7}dmg*=f;if(SRC&&SRC.k==='bullet')e.fireT=2.5}
   else if(e.D.tank&&e.halt>0&&SRC&&SRC.k==='bullet'){const c=terrAt(Math.floor(e.x),Math.floor(e.y));if(c==='h'||c==='f')dmg*=.75}
   const h0=e.hp;_hit87(e,dmg,pen);
@@ -4873,18 +4875,18 @@ const _special87=special;special=function(e,dt){const r=_special87(e,dt);if(r)re
     // Verschanzt: bleibt in Trichter, Ruine oder Waldrand liegen und schießt von dort, dann geht es weiter
     // Stellungskampf: bleibt in Deckung, solange Feuer liegt (bis 9 s), dann Sprung zur nächsten Deckung
     if(e.holdT>0){e.holdT-=dt;e.holdAll=(e.holdAll||0)+dt;if(e.fireT>0){e.fireT-=dt;if(e.holdAll<9)e.holdT=Math.max(e.holdT,.8)}e.prone=Math.max(e.prone||0,.2);
-      if(e.holdT<=0){e.holdCd=G.t+2.5;if(e.coverP)(e.used||(e.used=new Set())).add(e.coverP.key||e.coverP);e.coverP=null;e.dugIn=0;e.holdAll=0}else return true}
+      if(e.holdT<=0){e.deep=false;e.holdCd=G.t+2.5;if(e.coverP)(e.used||(e.used=new Set())).add(e.coverP.key||e.coverP);e.coverP=null;e.dugIn=0;e.holdAll=0}else return true}
     if(e.fireT>0){e.fireT-=dt;const q=e.coverP||(e.coverP=nearestCover(e));
       if(q){const a=pointAt(e.d,e.pi),nx=-a.dy,ny=a.dx,lim=q.tile?1.2:.45,want=Math.max(-lim,Math.min(lim,(q.x-a.x)*nx+(q.y-a.y)*ny)),ahead=(q.x-a.x)*a.dx+(q.y-a.y)*a.dy,dist=Math.hypot(q.x-e.x,q.y-e.y);
         e.off+=Math.max(-dt*1.1,Math.min(dt*1.1,want-e.off));
         // in den Trichter kriechen, in die Ruine hineingehen
         if(!q.tile&&dist<.7)e.prone=Math.max(e.prone||0,.25);
-        if(e.k!=='pio'&&G.t>(e.holdCd||0)&&dist<(q.tile?.22:.2)){e.holdT=2.5+Math.random()*1.5;e.holdAll=0;e.dugIn=q.tile||'crater';e.prone=.3;return true}
+        if(e.k!=='pio'&&G.t>(e.holdCd||0)&&dist<(q.tile?.22:.2)){e.holdT=2.5+Math.random()*1.5;e.holdAll=0;e.dugIn=q.tile||'crater';e.deep=q.tile==='R'||q.deep||(q.r||0)>=.19;e.prone=.3;return true}
         if(ahead<-.25)e.coverP=null;else if(ahead<.1&&Math.abs(want-e.off)>.04)return true}
       if(e.k!=='pio'&&G.t>(e.nextDrop||0)){e.prone=1.1+Math.random()*.5;e.nextDrop=G.t+e.prone+.9+Math.random()*.6}}
     else if(!e.holdT){e.coverP=null;if(Math.abs(e.off)>.44)e.off*=Math.pow(.3,dt)}
     if(e.k==='pio'&&!e.dug&&e.d>G.M.paths[e.pi].len*(.3+((e.id*37)%40)/100)){if(e.digT==null)e.digT=3;e.digT-=dt;
-      if(e.digT<=0){e.dug=1;const a=pointAt(e.d,e.pi);G.holes.push({x:a.x-a.dy*(e.off||0)*1.2,y:a.y+a.dx*(e.off||0)*1.2});if(G.holes.length>40)G.holes.shift();stamp({k:'crater',x:a.x-a.dy*(e.off||0)*1.2,y:a.y+a.dx*(e.off||0)*1.2,r:.09,seed:e.id*7919})}
+      if(e.digT<=0){e.dug=1;const a=pointAt(e.d,e.pi);G.holes.push({x:a.x-a.dy*(e.off||0)*1.2,y:a.y+a.dx*(e.off||0)*1.2,deep:1});if(G.holes.length>40)G.holes.shift();stamp({k:'crater',x:a.x-a.dy*(e.off||0)*1.2,y:a.y+a.dx*(e.off||0)*1.2,r:.09,seed:e.id*7919})}
       return e.digT>0}
     return false}
   if(e.D.tank&&!e.fixed&&e.k!=='sturm'&&e.k!=='boss'){
