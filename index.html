@@ -1260,7 +1260,7 @@ function update(dt){
     if(t.hp<t.max*.4&&Math.random()<dt*3)part('smoke',t.cx+(Math.random()-.5)*.3,t.cy+(Math.random()-.5)*.3,.12,{col:'#2b2925',vz:.3,T:2});
     let best=null,bp=-1e9;
     for(const e of G.enemies){
-      if(e.dead)continue;if(e.air?!(s.air>0):!(s.ground>0))continue;if(t.ign&&t.ign[e.id]>G.t)continue;
+      if(e.dead)continue;if(e.air?!(s.air>0):!(s.ground>0))continue;if(t.ign&&t.ign[e.id]>G.t)continue;if(d.kind!=='arc'&&immuneTo(e,s.pen))continue;
       const dist=Math.hypot(e.x-t.cx,e.y-t.cy);if(dist>s.range||dist<s.min)continue;
       if(d.kind==='arc'&&!canSee(t,e))continue;
       const prog=e.fixed?.5:e.air?e.d/e.len:e.d/G.M.paths[e.pi].len;
@@ -1276,7 +1276,7 @@ function update(dt){
     sh.t+=dt;if(sh.t<0)continue;
     if(sh.rocket&&Math.random()<.85){const p=sh.t/sh.T,x=sh.x0+(sh.x1-sh.x0)*p,y=sh.y0+(sh.y1-sh.y0)*p,z=Math.sin(Math.PI*p)*sh.h;part('smoke',x,y,.1,{z,col:'#b4afa2',vz:.02,T:1.2})}
     if(sh.t>=sh.T){sh.done=true;
-      SRC={k:sh.ammo==='shr'?'shr':'blast',x:sh.x1,y:sh.y1,cal:sh.ammo==='ap'?sh.cal*.55:sh.cal,sx:sh.x0,sy:sh.y0};CUR=sh.tw||null;const mul=sh.mul||1;
+      SRC={k:sh.ammo==='shr'?'shr':'blast',x:sh.x1,y:sh.y1,cal:sh.ammo==='ap'?sh.cal*.55:sh.cal,sx:sh.x0,sy:sh.y0,ap:sh.ammo==='ap'};CUR=sh.tw||null;const mul=sh.mul||1;
       const tg=sh.tg&&!sh.tg.dead&&!sh.rocket&&sh.ammo!=='shr'&&Math.hypot(sh.tg.x-sh.x1,sh.tg.y-sh.y1)<.35+(sh.tg.D.L||0)*.3?sh.tg:null;
       splash(sh.x1,sh.y1,Math.max(.35,sh.s.splash),sh.s.dmg*mul,sh.s.pen,false,tg);
       if(tg){hit(tg,sh.s.dmg*mul*(tg.D.veh?1.5:1),sh.s.pen+(tg.D.veh?4:0));if(tg.D.veh&&!tg.dead&&sh.cal>=100&&G.t-(tg.vtT||0)>1.2){tg.vtT=G.t;floatText(tg.x,tg.y-.3,'Volltreffer','#ffcf7a')}}
@@ -4527,7 +4527,7 @@ const BIGMAPS={
   areas:[['w',0,2,14,2],['m',0,5,2,8],['m',11,4,14,7],['m',6,9,7,10],['m',12,10,14,11],['m',0,11,1,12],['h',0,15,3,17],['h',11,15,14,17],['h',6,15,7,16],['b',1,20,2,20],['b',12,20,13,20],['b',4,23,4,23],['b',10,22,10,23],['b',1,23,1,23],['f',0,25,2,25],['f',12,24,14,25],['R',8,21,8,21]],
   routes:[[[4,-1],[4,12],[5,12],[5,19],[7,19],[7,26]],[[10,-1],[10,12],[9,12],[9,19],[7,19],[7,26]]],fords:[]}};
 for(const m of CAMP)if(BIGMAPS[m.id])m.map=BIGMAPS[m.id];
-const WM={m_brest:1.0,m_dubos:0.85,m_stz:0.85,m_ponyri:0.85,m_seelow:0.95};
+const WM={m_brest:1.0,m_dubos:0.85,m_stz:0.6,m_ponyri:0.85,m_seelow:0.6};
 for(const m of CAMP){MAPS[m.id]=m.map;if(!m.map.big)scaleMap(m.map,1.2);prepMap(m.map);for(const k of m.map.set){const[x,y]=k.split(',').map(Number);if('bhfRm'.includes(m.map.terr[y][x]))m.map.terr[y][x]='.'}
   SCEN[m.id]={camp:1,waveMul:WM[m.id]||1,rew:1.3/Math.sqrt(WM[m.id]||1),title:m.title,year:m.date,sides:[m.side,m.side==='su'?'de':'su'],blurb:m.story,money:m.money,waves:m.waves,top:m.top,maxTier:m.maxTier,allow:m.allow||null,mod:m.mod||{},weather:m.weather,radio:m.radio}}
 const CKEY='frontlinie-camp-v1';
@@ -4799,11 +4799,11 @@ const _stats87=stats;stats=function(t){const s=_stats87(t);const p=penOf(G.side,
 const _fire87=fire;fire=function(t,d,s,e){if(TD[t.type].kind!=='arc'&&s.pen2!=null&&e){const f=Math.min(1,Math.hypot(e.x-t.cx,e.y-t.cy)/Math.max(.5,s.range));s.pen=s.pen+(s.pen2-s.pen)*f}_fire87(t,d,s,e)};
 // Panzerung je Trefferrichtung: Front, Seite, Heck. Bogenfeuer trifft die Oberseite (halbe Seitenstärke, geschätzt).
 armAt=function(e){if(!e.D.veh)return 0;const F=e.arm,S=e.armS!=null?e.armS:F,R=e.armR!=null?e.armR:S;
-  if(!SRC||SRC.x==null)return F;if(SRC.k!=='bullet')return SRC.k==='blast'?S*.5:F;
+  if(!SRC||SRC.x==null)return F;if(SRC.k!=='bullet')return SRC.k==='blast'?S*.7:F;
   const a=Math.atan2(SRC.y-e.y,SRC.x-e.x)-e.ang-(e.hullOff||0),cf=Math.cos(a);return cf>.5?F:cf<-.6?R:S};
 // Durchschlag gegen Panzerung: deutlich darüber = voll, knapp = Teildurchschlag, darunter = Abpraller (Sprenggranaten: nur Splitter)
 penMul=function(pen,arm){if(arm<=0)return 1;const r=pen/arm,B=SRC&&SRC.k==='bullet';
-  if(r>=1.1)return 1;if(r>=.9)return B&&(SRC.cal||8)<15?.25:.5;return B?0:.08};
+  const he=SRC&&SRC.k==='blast'&&!SRC.ap?.5:1;if(r>=1.1)return he;if(r>=.9)return(B&&(SRC.cal||8)<15?.25:.5)*he;return B?0:.08};
 // Feste Durchschläge der übrigen Quellen von Stufen auf mm umrechnen (Minen, Nebelwerfer-Direktschuss, Häuser)
 const ABS2MM=12;
 // Fahrzeuge beim Erscheinen: Panzerung in mm, Leben nach Typ, keine Zähigkeit mehr durch Wellenzahl
