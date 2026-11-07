@@ -4878,13 +4878,14 @@ const _special87=special;special=function(e,dt){const r=_special87(e,dt);if(r)re
       if(e.holdT<=0){e.deep=false;e.holdCd=G.t+2.5;if(e.coverP)(e.used||(e.used=new Set())).add(e.coverP.key||e.coverP);e.coverP=null;e.dugIn=0;e.holdAll=0}else return true}
     if(e.fireT>0){e.fireT-=dt;const q=e.coverP||(e.coverP=nearestCover(e));
       if(q){const a=pointAt(e.d,e.pi),nx=-a.dy,ny=a.dx,lim=q.tile?1.2:.45,want=Math.max(-lim,Math.min(lim,(q.x-a.x)*nx+(q.y-a.y)*ny)),ahead=(q.x-a.x)*a.dx+(q.y-a.y)*a.dy,dist=Math.hypot(q.x-e.x,q.y-e.y);
-        e.off+=Math.max(-dt*1.1,Math.min(dt*1.1,want-e.off));
+        const lat=Math.max(-dt*.55,Math.min(dt*.55,want-e.off));e.off+=lat;if(Math.abs(want-e.off)>.08)e.sideT=.15;
         // in den Trichter kriechen, in die Ruine hineingehen
         if(!q.tile&&dist<.7)e.prone=Math.max(e.prone||0,.25);
         if(e.k!=='pio'&&G.t>(e.holdCd||0)&&dist<(q.tile?.22:.2)){e.holdT=2.5+Math.random()*1.5;e.holdAll=0;e.dugIn=q.tile||'crater';e.deep=q.tile==='R'||q.deep||(q.r||0)>=.19;e.prone=.3;return true}
         if(ahead<-.25)e.coverP=null;else if(ahead<.1&&Math.abs(want-e.off)>.04)return true}
       if(e.k!=='pio'&&G.t>(e.nextDrop||0)){e.prone=1.1+Math.random()*.5;e.nextDrop=G.t+e.prone+.9+Math.random()*.6}}
-    else if(!e.holdT){e.coverP=null;if(Math.abs(e.off)>.44)e.off*=Math.pow(.3,dt)}
+    else if(!e.holdT){e.coverP=null;if(Math.abs(e.off)>.44){e.off-=Math.sign(e.off)*Math.min(dt*.5,Math.abs(e.off)-.44);e.sideT=.15}}
+    if(e.sideT>0){e.sideT-=dt;e.slowSide=1}else e.slowSide=0;
     if(e.k==='pio'&&!e.dug&&e.d>G.M.paths[e.pi].len*(.3+((e.id*37)%40)/100)){if(e.digT==null)e.digT=3;e.digT-=dt;
       if(e.digT<=0){e.dug=1;const a=pointAt(e.d,e.pi);G.holes.push({x:a.x-a.dy*(e.off||0)*1.2,y:a.y+a.dx*(e.off||0)*1.2,deep:1});if(G.holes.length>40)G.holes.shift();stamp({k:'crater',x:a.x-a.dy*(e.off||0)*1.2,y:a.y+a.dx*(e.off||0)*1.2,r:.09,seed:e.id*7919})}
       return e.digT>0}
@@ -4898,6 +4899,17 @@ const _special87=special;special=function(e,dt){const r=_special87(e,dt);if(r)re
 // Zeichnen: Trichter, Schützenlöcher und Panzernebel
 // Anzeige: mm in den Karten
 function immuneTo(e,pen){if(e.air||!e.D.veh||pen==null)return false;const m=Math.min(e.armS??e.arm,e.armR??e.armS??e.arm);return m>0&&pen<m*.9}
+// Seitliches Gehen bremst das Vorwärtskommen (sonst addieren sich beide Bewegungen)
+const _place88=place;place=function(e,dt){if(dt&&e.slowSide&&!e.D.veh&&!e.air&&e.v>0){e.d-=e.v*dt*.6}
+  if(!dt||e.D.veh||e.air||e.x==null){_place88(e,dt);return}const ox=e.x,oy=e.y;_place88(e,dt);
+  // Infanterie bewegt sich nie schneller als im Laufschritt (kein Flitzen an Kurven oder beim Deckungswechsel)
+  const dx=e.x-ox,dy=e.y-oy,d=Math.hypot(dx,dy),mx=e.D.spd*1.15*dt;if(d>mx){e.x=ox+dx*mx/d;e.y=oy+dy*mx/d}};
+// Volle Deckung: Leuchtspur endet an der Deckung, Staub spritzt dort auf
+const _fire88=fire;fire=function(t,d,s,e){const n0=G.tracers.length;_fire88(t,d,s,e);
+  if(e&&!e.D.veh&&!e.air&&e.holdT>0&&e.deep&&(mmOf(G.side,t.type,t.lvl)||8)<15)for(let i=n0;i<G.tracers.length;i++){const tr=G.tracers[i],dx=tr.x2-tr.x1,dy=tr.y2-tr.y1,L=Math.hypot(dx,dy)||1,k=Math.max(0,(L-.24)/L);
+    tr.x2=tr.x1+dx*k;tr.y2=tr.y1+dy*k;if(Math.random()<.5)part('dust',tr.x2,tr.y2,.05,{col:e.dugIn==='R'?'#8a8278':'#7d6e55'})}};
+// Niedergehalten: wer in Deckung unter Feuer liegt, schießt nicht zurück
+const _ea88=enemyAttack;enemyAttack=function(e,dt){if(!e.D.veh&&!e.air&&e.holdT>0&&e.fireT>0){e.cdR=Math.max(e.cdR||0,.3);return}_ea88(e,dt)};
 function penLabel(t,s){if(s.pen==null)return'–';const n=Math.round(s.pen),f=Math.round(s.pen2??s.pen);return(TD[t.type].kind!=='arc'&&f!==n?n+'→'+f:n)+' mm'+(s.penEst?'*':'')}
 
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
