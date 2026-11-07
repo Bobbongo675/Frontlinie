@@ -4834,11 +4834,18 @@ if(SCEN.m_seelow)SCEN.m_seelow.allow=['inf','car','recon','apc','pio','ltank','m
 // ---------- Gegnerverhalten ----------
 // Deckung: Trichter von Einschlägen, Schützenlöcher der Pioniere, Wald/Ruine/Kornfeld
 const _ng87=newGame;newGame=function(a,b,c){G&&(G.craters=[],G.holes=[],G.esmoke=[]);_ng87(a,b,c);G.craters=[];G.holes=[];G.esmoke=[]};
+// Deckungen entlang der Wege für Stellungskämpfe: alle gut 2 Felder ein Trichter oder Mauerrest am Straßenrand, nicht auf Brücken
+const _ng89=newGame;newGame=function(a,b,c){_ng89(a,b,c);G.rcover=[];const R=rng((G.M.seed||1)*31+7),seen=new Set();
+  G.M.paths.forEach((P,pi)=>{for(let d=2.5;d<P.len-1.5;d+=1.9+R()*1.2){const p=pointAt(d,pi),sg=R()<.5?1:-1,o=sg*(.25+R()*.15),x=p.x-p.dy*o,y=p.y+p.dx*o,key=Math.floor(x)+','+Math.floor(y);
+    if(terrAt(Math.floor(x),Math.floor(y))==='w'||G.M.ford.has(key)||seen.has(key))continue;seen.add(key);const k=R()<.6?'crater':'rubble';G.rcover.push({x,y,k});
+    if(k==='crater')stamp({k:'crater',x,y,r:.1+R()*.04,seed:R()*1e6|0});else{stamp({k:'scorch',x,y,r:.07,seed:R()*1e6|0});for(let i=0;i<4;i++)stamp({k:'crater',x:x+(R()-.5)*.14,y:y+(R()-.5)*.14,r:.025,seed:R()*1e6|0})}}});scarKey=''};
 const _impact87=impact;impact=function(x,y,cal,kind){_impact87(x,y,cal,kind);if(!G||!G.craters)return;
   if(kind==='he'&&cal>=75){G.craters.push({x,y,r:.1+Math.min(.25,cal/1200)});if(G.craters.length>90)G.craters.shift()}
   if(kind==='he'&&cal>=50)for(const e of G.enemies){if(e.dead||e.D.veh||e.air)continue;const d=Math.hypot(e.x-x,e.y-y);if(d<1.4){e.fireT=3;e.off=Math.max(-.44,Math.min(.44,e.off+(Math.random()-.5)*.3))}}};
 function holeCover(e){let c=1;for(const h of G.holes||[])if(Math.hypot(h.x-e.x,h.y-e.y)<.3){c=.5;break}
-  if(c>.6)for(const q of G.craters||[])if(Math.hypot(q.x-e.x,q.y-e.y)<q.r+.06){c=.6;break}return c}
+  if(c>.6)for(const q of G.craters||[])if(Math.hypot(q.x-e.x,q.y-e.y)<q.r+.06){c=.6;break}
+  if(c>.55)for(const q of G.rcover||[])if(Math.hypot(q.x-e.x,q.y-e.y)<.22){c=.55;break}
+  if(c>.55&&G.wrecks)for(const w of G.wrecks)if(!w.plane&&w.kind!=='turpiece'&&Math.hypot(w.x-e.x,w.y-e.y)<.3){c=.5;break}return c}
 function inSmoke(e){for(const s of G.esmoke||[])if(Math.hypot(s.x-e.x,s.y-e.y)<s.r)return true;return false}
 const _hit87=hit;hit=function(e,dmg,pen){
   if(!e.D.veh&&!e.air){let f=holeCover(e)*(e.holdT>0?.7:1);if(SRC&&SRC.k==='bullet'){const c=TERR[terrAt(Math.floor(e.x),Math.floor(e.y))];f*=(c&&c.cover)||1;if(e.prone>0)f*=.7}dmg*=f;if(SRC&&SRC.k==='bullet')e.fireT=2.5}
@@ -4852,17 +4859,22 @@ const _hit87=hit;hit=function(e,dmg,pen){
 const _canSee87=canSee;canSee=function(t,e){if(inSmoke(e))return false;return _canSee87(t,e)};
 const _upd87=update;update=function(dt){if(G&&G.esmoke&&G.esmoke.length){for(const s of G.esmoke)s.t-=dt;G.esmoke=G.esmoke.filter(s=>s.t>0)}_upd87(dt)};
 // Bewegung: sprungweises Vorgehen, Deckung suchen, Panzer halten und drehen die Front, Pioniere graben sich ein
-function nearestCover(e){let best=null,bd=1;
-  for(const q of(G.craters||[]).concat(G.holes||[])){const d=Math.hypot(q.x-e.x,q.y-e.y);if(d<bd){const a=pointAt(e.d,e.pi);const dx=q.x-a.x,dy=q.y-a.y;const ahead=dx*a.dx+dy*a.dy;if(ahead>-.1&&ahead<.9){bd=d;best=q}}}
-  if(!best){const a=pointAt(e.d+.3,e.pi);for(const[ox,oy]of[[1,0],[-1,0],[0,1],[0,-1]]){const x=Math.floor(a.x)+ox,y=Math.floor(a.y)+oy,c=terrAt(x,y);if(c==='f'||c==='R'||c==='g'){best={x:x+.5-ox*.3,y:y+.5-oy*.3,tile:c};break}}}
+// Deckung suchen: auf der Straße (Trichter, Schützenlöcher, Wracks, Deckungen am Wegrand), von der Straße weg nur in Ruinen
+function nearestCover(e){let best=null,bd=1.6;const a=pointAt(e.d,e.pi),nx=-a.dy,ny=a.dx;
+  const cand=(G.craters||[]).concat(G.holes||[],G.rcover||[]);if(G.wrecks)for(const w of G.wrecks)if(!w.plane&&w.kind!=='turpiece')cand.push(w);
+  for(const q of cand){const dx=q.x-a.x,dy=q.y-a.y,ahead=dx*a.dx+dy*a.dy,side=Math.abs(dx*nx+dy*ny);if(ahead<-.15||ahead>1.4||side>.5)continue;const d=Math.hypot(q.x-e.x,q.y-e.y);if(d<bd){bd=d;best=q}}
+  if(!best)for(const s of[.3,.9])for(const sg of[1,-1]){const p=pointAt(e.d+s,e.pi),x=Math.floor(p.x+(-p.dy)*sg*.9),y=Math.floor(p.y+p.dx*sg*.9);if(terrAt(x,y)==='R'){best={x:x+.5,y:y+.5,tile:'R'};break}}
   return best}
 const _special87=special;special=function(e,dt){const r=_special87(e,dt);if(r)return r;
   if(!e.D.veh&&!e.air){
     // Verschanzt: bleibt in Trichter, Ruine oder Waldrand liegen und schießt von dort, dann geht es weiter
-    if(e.holdT>0){e.holdT-=dt;e.prone=Math.max(e.prone||0,.2);if(e.holdT<=0){e.holdCd=G.t+7;e.coverP=null;e.dugIn=0}else return true}
+    // Stellungskampf: bleibt in Deckung, solange Feuer liegt (bis 9 s), dann Sprung zur nächsten Deckung
+    if(e.holdT>0){e.holdT-=dt;e.holdAll=(e.holdAll||0)+dt;if(e.fireT>0){e.fireT-=dt;if(e.holdAll<9)e.holdT=Math.max(e.holdT,.8)}e.prone=Math.max(e.prone||0,.2);
+      if(e.holdT<=0){e.holdCd=G.t+1.5;e.coverP=null;e.dugIn=0;e.holdAll=0}else return true}
     if(e.fireT>0){e.fireT-=dt;const q=e.coverP||(e.coverP=nearestCover(e));
-      if(q){const a=pointAt(e.d,e.pi),nx=-a.dy,ny=a.dx,lim=q.tile?.95:.6,want=Math.max(-lim,Math.min(lim,(q.x-a.x)*nx+(q.y-a.y)*ny));e.off+=(want-e.off)*Math.min(1,dt*3);
-        if(e.k!=='pio'&&G.t>(e.holdCd||0)&&Math.hypot(q.x-e.x,q.y-e.y)<(q.tile?.6:.28)){e.holdT=3+Math.random()*3.5;e.dugIn=q.tile||'crater';e.prone=.3;return true}}
+      if(q){const a=pointAt(e.d,e.pi),nx=-a.dy,ny=a.dx,lim=q.tile?.95:.45,want=Math.max(-lim,Math.min(lim,(q.x-a.x)*nx+(q.y-a.y)*ny));e.off+=(want-e.off)*Math.min(1,dt*3);
+        if(e.k!=='pio'&&G.t>(e.holdCd||0)&&Math.hypot(q.x-e.x,q.y-e.y)<(q.tile?.6:.3)){e.holdT=2.5+Math.random()*1.5;e.holdAll=0;e.dugIn=q.tile||'crater';e.prone=.3;return true}
+        if(q.x!=null&&(q.x-a.x)*a.dx+(q.y-a.y)*a.dy<-.2)e.coverP=null}
       if(e.k!=='pio'&&G.t>(e.nextDrop||0)){e.prone=1.1+Math.random()*.5;e.nextDrop=G.t+e.prone+.9+Math.random()*.6}}
     else if(!e.holdT){e.coverP=null;if(Math.abs(e.off)>.44)e.off*=Math.pow(.3,dt)}
     if(e.k==='pio'&&!e.dug&&e.d>G.M.paths[e.pi].len*(.3+((e.id*37)%40)/100)){if(e.digT==null)e.digT=3;e.digT-=dt;
