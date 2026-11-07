@@ -4841,7 +4841,7 @@ function holeCover(e){let c=1;for(const h of G.holes||[])if(Math.hypot(h.x-e.x,h
   if(c>.6)for(const q of G.craters||[])if(Math.hypot(q.x-e.x,q.y-e.y)<q.r+.06){c=.6;break}return c}
 function inSmoke(e){for(const s of G.esmoke||[])if(Math.hypot(s.x-e.x,s.y-e.y)<s.r)return true;return false}
 const _hit87=hit;hit=function(e,dmg,pen){
-  if(!e.D.veh&&!e.air){let f=holeCover(e);if(SRC&&SRC.k==='bullet'){const c=TERR[terrAt(Math.floor(e.x),Math.floor(e.y))];f*=(c&&c.cover)||1;if(e.prone>0)f*=.7}dmg*=f;if(SRC&&SRC.k==='bullet')e.fireT=2.5}
+  if(!e.D.veh&&!e.air){let f=holeCover(e)*(e.holdT>0?.7:1);if(SRC&&SRC.k==='bullet'){const c=TERR[terrAt(Math.floor(e.x),Math.floor(e.y))];f*=(c&&c.cover)||1;if(e.prone>0)f*=.7}dmg*=f;if(SRC&&SRC.k==='bullet')e.fireT=2.5}
   else if(e.D.tank&&e.halt>0&&SRC&&SRC.k==='bullet'){const c=terrAt(Math.floor(e.x),Math.floor(e.y));if(c==='h'||c==='f')dmg*=.75}
   const h0=e.hp;_hit87(e,dmg,pen);
   // Panzer nebeln sich ein, sobald die Panzerabwehr sie trifft (einmal)
@@ -4854,14 +4854,17 @@ const _upd87=update;update=function(dt){if(G&&G.esmoke&&G.esmoke.length){for(con
 // Bewegung: sprungweises Vorgehen, Deckung suchen, Panzer halten und drehen die Front, Pioniere graben sich ein
 function nearestCover(e){let best=null,bd=1;
   for(const q of(G.craters||[]).concat(G.holes||[])){const d=Math.hypot(q.x-e.x,q.y-e.y);if(d<bd){const a=pointAt(e.d,e.pi);const dx=q.x-a.x,dy=q.y-a.y;const ahead=dx*a.dx+dy*a.dy;if(ahead>-.1&&ahead<.9){bd=d;best=q}}}
-  if(!best){const a=pointAt(e.d+.3,e.pi);for(const[ox,oy]of[[1,0],[-1,0],[0,1],[0,-1]]){const x=Math.floor(a.x)+ox,y=Math.floor(a.y)+oy,c=terrAt(x,y);if(c==='f'||c==='R'||c==='g'){best={x:x+.5,y:y+.5};break}}}
+  if(!best){const a=pointAt(e.d+.3,e.pi);for(const[ox,oy]of[[1,0],[-1,0],[0,1],[0,-1]]){const x=Math.floor(a.x)+ox,y=Math.floor(a.y)+oy,c=terrAt(x,y);if(c==='f'||c==='R'||c==='g'){best={x:x+.5-ox*.3,y:y+.5-oy*.3,tile:c};break}}}
   return best}
 const _special87=special;special=function(e,dt){const r=_special87(e,dt);if(r)return r;
   if(!e.D.veh&&!e.air){
+    // Verschanzt: bleibt in Trichter, Ruine oder Waldrand liegen und schießt von dort, dann geht es weiter
+    if(e.holdT>0){e.holdT-=dt;e.prone=Math.max(e.prone||0,.2);if(e.holdT<=0){e.holdCd=G.t+7;e.coverP=null;e.dugIn=0}else return true}
     if(e.fireT>0){e.fireT-=dt;const q=e.coverP||(e.coverP=nearestCover(e));
-      if(q){const a=pointAt(e.d,e.pi),nx=-a.dy,ny=a.dx,want=Math.max(-.45,Math.min(.45,(q.x-a.x)*nx+(q.y-a.y)*ny));e.off+=(want-e.off)*Math.min(1,dt*2.5)}
+      if(q){const a=pointAt(e.d,e.pi),nx=-a.dy,ny=a.dx,lim=q.tile?.95:.6,want=Math.max(-lim,Math.min(lim,(q.x-a.x)*nx+(q.y-a.y)*ny));e.off+=(want-e.off)*Math.min(1,dt*3);
+        if(e.k!=='pio'&&G.t>(e.holdCd||0)&&Math.hypot(q.x-e.x,q.y-e.y)<(q.tile?.6:.28)){e.holdT=3+Math.random()*3.5;e.dugIn=q.tile||'crater';e.prone=.3;return true}}
       if(e.k!=='pio'&&G.t>(e.nextDrop||0)){e.prone=1.1+Math.random()*.5;e.nextDrop=G.t+e.prone+.9+Math.random()*.6}}
-    else e.coverP=null;
+    else if(!e.holdT){e.coverP=null;if(Math.abs(e.off)>.44)e.off*=Math.pow(.3,dt)}
     if(e.k==='pio'&&!e.dug&&e.d>G.M.paths[e.pi].len*(.3+((e.id*37)%40)/100)){if(e.digT==null)e.digT=3;e.digT-=dt;
       if(e.digT<=0){e.dug=1;const a=pointAt(e.d,e.pi);G.holes.push({x:a.x-a.dy*(e.off||0)*1.2,y:a.y+a.dx*(e.off||0)*1.2});if(G.holes.length>40)G.holes.shift();stamp({k:'crater',x:a.x-a.dy*(e.off||0)*1.2,y:a.y+a.dx*(e.off||0)*1.2,r:.09,seed:e.id*7919})}
       return e.digT>0}
@@ -4875,6 +4878,10 @@ const _special87=special;special=function(e,dt){const r=_special87(e,dt);if(r)re
 // Zeichnen: Trichter, Schützenlöcher und Panzernebel
 // Anzeige: mm in den Karten
 function immuneTo(e,pen){if(e.air||!e.D.veh||pen==null)return false;const m=Math.min(e.armS??e.arm,e.armR??e.armS??e.arm);return m>0&&pen<m*.9}
+const _drawEnemy88=drawEnemy;drawEnemy=function(c,e){if(e.holdT>0&&!e.D.veh&&!e.air){const by=G.towers.length?G.towers.reduce((b,t)=>{const d=Math.hypot(t.cx-e.x,t.cy-e.y);return d<b[0]?[d,t]:b},[1e9,null])[1]:null;
+  const a=by?Math.atan2(by.cy-e.y,by.cx-e.x):e.ang;c.save();c.translate(e.x,e.y);c.rotate(a);c.lineCap='round';
+  c.strokeStyle='rgba(40,32,22,.55)';c.lineWidth=.05;c.beginPath();c.arc(-.02,0,.14,-1.1,1.1);c.stroke();
+  c.strokeStyle=e.dugIn==='R'?'#6f675c':'#6a5638';c.lineWidth=.035;c.beginPath();c.arc(-.03,0,.13,-1,1);c.stroke();c.restore()}_drawEnemy88(c,e)};
 function penLabel(t,s){if(s.pen==null)return'–';const n=Math.round(s.pen),f=Math.round(s.pen2??s.pen);return(TD[t.type].kind!=='arc'&&f!==n?n+'→'+f:n)+' mm'+(s.penEst?'*':'')}
 
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
