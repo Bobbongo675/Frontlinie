@@ -342,7 +342,7 @@ const mmOf=(side,type,lvl)=>{const v=vOf(side,type,lvl||1);return v?v[2]:0};
 const parOf=(side,type,lvl)=>{const v=vOf(side,type,lvl||1);return v?v[3]:{}};
 const AM={
   std:{n:'Standard',d:'Ausgewogen gegen Infanterie und leichte Fahrzeuge.'},
-  apmg:{n:'Panzerbrechend',dmg:.8,pen:2,d:'Mehr Durchschlag gegen Spähwagen und Halbketten, etwas weniger Schaden. An Panzern prallt Gewehrmunition ab.'},
+  apmg:{n:'Panzerbrechend',dmg:.8,pen:2,d:'Mehr Durchschlag gegen Halbketten und leichte Panzer, etwas weniger Schaden.'},
   he:{n:'Spreng',d:'Splitterwirkung in der Fläche, wenig Durchschlag.'},
   ap:{n:'Panzergranate',dmg:1.1,pen:6,splash:.25,d:'Hoher Durchschlag gegen Panzer, kaum Flächenwirkung.'},
   shr:{n:'Schrapnell',dmg:.75,splash:1.5,penSet:0,d:'Zerplatzt über dem Boden. Große Fläche gegen Infanterie, wirkungslos gegen Panzerung.'},
@@ -355,7 +355,7 @@ const AM={
 
 /* ---------- Gegner ---------- */
 const ED={
-  inf:   {hp:20,spd:.85,arm:0,rew:5,lives:1,pts:5,gap:.42},
+  inf:   {hp:32,spd:.85,arm:0,rew:5,lives:1,pts:5,gap:.42},
   car:   {hp:75,spd:1.6,arm:1,rew:8,lives:1,pts:9,veh:1,L:.42,W:.26,atk:8,gap:1},
   apc:   {hp:150,spd:1.1,arm:2,rew:14,lives:2,pts:16,veh:1,L:.56,W:.3,atk:12,carry:3,gap:1.2},
   ltank: {hp:240,spd:1,arm:4,rew:20,lives:2,pts:24,veh:1,tank:1,L:.48,W:.32,atk:20,gap:1.4},
@@ -365,7 +365,7 @@ const ED={
   bomber:{hp:320,spd:1.1,arm:2,rew:30,lives:3,pts:34,air:1,gap:1.4},
   attack:{hp:190,spd:1.35,arm:3,rew:22,lives:1,pts:26,air:1,gap:1.2},
   recon: {hp:45,spd:2.1,arm:0,rew:8,lives:1,pts:8,veh:1,L:.3,W:.2,gap:.8},
-  pio:   {hp:20,spd:.8,arm:0,rew:7,lives:1,pts:8,gap:.5},
+  pio:   {hp:30,spd:.8,arm:0,rew:7,lives:1,pts:8,gap:.5},
   goliath:{hp:40,spd:1.15,arm:1,rew:8,lives:1,pts:10,veh:1,L:.22,W:.14,gap:.9},
   sturm: {hp:420,spd:.74,arm:7,armS:4,rew:30,lives:3,pts:36,veh:1,tank:1,L:.56,W:.38,atk:30,gap:1.7},
   boss:  {hp:2100,spd:.36,arm:14,armS:10,rew:150,lives:8,pts:150,veh:1,tank:1,L:.8,W:.46,atk:80,gap:3,mineX:2.2},
@@ -851,7 +851,7 @@ function destroyTower(t){
 
 let eid=0;
 function spawn(k,d0,pi){
-  const D=ED[k],m=(1+.028*(Math.round(G.wave*(SCEN[G.scen].top||25)/MAXW)-1)*(k==='inf'||k==='pio'?.3:1))*(G.prepMul||1);
+  const D=ED[k],m=(1+.028*(Math.round(G.wave*(SCEN[G.scen].top||25)/MAXW)-1))*(G.prepMul||1);
   const e={id:eid++,pi:0,ricT:0,cdA:Math.random(),k,D,hp:D.hp*m,max:D.hp*m,arm:D.arm,d:d0||0,air:!!D.air,dead:false,flash:0,off:D.veh?(Math.random()-.5)*.12:(Math.random()-.5)*.44,bob:Math.random()*6,x:0,y:0,ang:0,v:D.spd,prone:0,tr:0,lk:Math.random()*12|0};
   if(pi==null){if(G.laneLeft<=0){G.lane=Math.floor(Math.random()*G.M.paths.length);G.laneLeft=2+Math.random()*5|0}G.laneLeft--;pi=G.lane}e.pi=pi%G.M.paths.length;e.assault=!D.veh&&!D.air&&Math.random()<.4;
   if(e.air){const CC=airCorr(),ci=G.airC&&G.airC.length?G.airC[Math.floor(Math.random()*G.airC.length)]:Math.floor(Math.random()*CC.length),c=CC[ci],j=(Math.random()-.5)*1.4;
@@ -871,14 +871,9 @@ function place(e,dt){
 // Drei Durchschlagsstufen: voll / Teildurchschlag (bis 2 unter der Panzerung) / Abpraller.
 // Treffer von der Seite oder von hinten treffen dünnere Panzerung (armS, sonst 2 weniger).
 function armAt(e){if(!e.D.veh||!SRC||SRC.x==null||SRC.k!=='bullet')return e.arm;const a=Math.atan2(SRC.y-e.y,SRC.x-e.x)-e.ang,cf=Math.cos(a);return cf>.5?e.arm:Math.max(0,e.D.armS!=null?e.D.armS:e.arm-2)}
-// Handwaffen gegen Panzer: Gewehrkaliber prallt an jedem Panzer ab, 12,7–15 mm an mittleren und schweren, Maschinenkanonen unter 40 mm an schweren. 20–30 mm gegen mittlere Panzer höchstens Teildurchschlag. Geschosse weit unter der Panzerung prallen immer ab.
-function smallArmsBounce(e,cal){return!!(e&&e.D.tank&&(cal<15&&(cal<10||e.arm>=6)||cal<40&&e.arm>=9))}
-function penMul(pen,arm,e){const B=SRC&&SRC.k==='bullet';if(B&&smallArmsBounce(e,SRC.cal||8))return 0;if(B&&e&&e.D.tank&&e.arm>=6&&(SRC.cal||8)<30)return pen>=arm-2?.25:0;return pen>=arm?1:pen>=arm-2?(B&&(SRC.cal||8)<15?.25:.5):B?0:.1}
-// Gegen Infantrie wirken Maschinenkanonen mit Sprenggeschossen (ab 20 mm) und schwere MGs (ab 12,7 mm) deutlich stärker pro Treffer
-function softMul(e){if(!SRC||SRC.k!=='bullet'||e.D.veh||e.air)return 1;const c=SRC.cal||8;return c>=20?4:c>=12?1.7:1}
-function immuneTo(e,pen,cal){if(e.air||!e.D.veh)return false;if(smallArmsBounce(e,cal))return true;if(e.D.tank&&e.arm>=6&&cal<30&&pen<(e.D.armS!=null?e.D.armS:e.arm-2)-2)return true;const side=e.D.armS!=null?e.D.armS:Math.max(0,e.arm-2);return pen<side-2}
+function penMul(pen,arm){return pen>=arm?1:pen>=arm-2?(SRC&&SRC.k==='bullet'&&(SRC.cal||8)<15?.25:.5):.1}
 function hit(e,dmg,pen){
-  if(e.dead)return;const ea=armAt(e),m=penMul(pen,ea,e)*(SRC&&SRC.ap&&!e.D.veh&&!e.air?.4:1)*softMul(e);e.hp-=dmg*m;e.flash=.08;if(CUR)e.by=CUR;
+  if(e.dead)return;const ea=armAt(e),m=penMul(pen,ea)*(SRC&&SRC.ap&&!e.D.veh&&!e.air?.4:1);e.hp-=dmg*m;e.flash=.08;if(CUR)e.by=CUR;
   if(e.D.veh&&!e.air&&SRC&&SRC.x!=null&&(SRC.k==='bullet'||Math.random()<.35)){ // Einschuss bzw. Abpraller an der Seite, die zum Schützen zeigt
     const rel=Math.atan2(SRC.y-e.y,SRC.x-e.x)-e.ang+(Math.random()-.5)*.7,L=e.D.L||.5,W=e.D.W||.3;
     const mk={lx:Math.max(-L*.42,Math.min(L*.42,Math.cos(rel)*L*.5*(.55+Math.random()*.4))),ly:Math.max(-W*.4,Math.min(W*.4,Math.sin(rel)*W*.5*(.5+Math.random()*.45))),
@@ -1265,11 +1260,11 @@ function update(dt){
     if(t.hp<t.max*.4&&Math.random()<dt*3)part('smoke',t.cx+(Math.random()-.5)*.3,t.cy+(Math.random()-.5)*.3,.12,{col:'#2b2925',vz:.3,T:2});
     let best=null,bp=-1e9;
     for(const e of G.enemies){
-      if(e.dead)continue;if(e.air?!(s.air>0):!(s.ground>0))continue;if(t.ign&&t.ign.id===e.id&&G.t<t.ign.until)continue;
+      if(e.dead)continue;if(e.air?!(s.air>0):!(s.ground>0))continue;
       const dist=Math.hypot(e.x-t.cx,e.y-t.cy);if(dist>s.range||dist<s.min)continue;
       if(d.kind==='arc'&&!canSee(t,e))continue;
       const prog=e.fixed?.5:e.air?e.d/e.len:e.d/G.M.paths[e.pi].len;
-      const p=(t.prio==='strong'?e.hp:t.prio==='near'?-dist:t.prio==='tank'?(e.arm*10+(e.D.tank?50:0)+prog):prog)+(t.zones&&t.zones.length?zoneBonus(t,e):0)-(d.kind!=='arc'&&immuneTo(e,s.pen,mmOf(G.side,t.type,t.lvl)||8)?1e6:0);
+      const p=(t.prio==='strong'?e.hp:t.prio==='near'?-dist:t.prio==='tank'?(e.arm*10+(e.D.tank?50:0)+prog):prog)+(t.zones&&t.zones.length?zoneBonus(t,e):0);
       if(p>bp){bp=p;best=e}
     }
     if(best){
@@ -1384,7 +1379,7 @@ function fire(t,d,s,e){
   if(d.kind==='direct'){
     const m=e.air?s.air:s.ground;
     const nb=t.nb||1;SRC={k:'bullet',x:bx,y:by,cal,ap:!!ATAMMO[t.ammo]};CUR=t;
-    if(!e.air&&e.D.veh){const pm=penMul(s.pen,armAt(e),e);if(pm===0){if(t.bncId!==e.id){t.bncId=e.id;t.bnc=0}if(++t.bnc>=3){t.ign={id:e.id,until:G.t+6};t.bnc=0;floatText(t.cx,t.cy-.35,'Feuer eingestellt','#a9a59a')}}if(pm<1){for(let i=0;i<2;i++)part('spark',e.x,e.y,.2);sfx('ping',e.x);if(G.t-e.ricT>.8){e.ricT=G.t;floatText(e.x,e.y-.25,pm<.5?'Abpraller':'Teildurchschlag',pm<.5?'#a9a59a':'#e8c75a')}}
+    if(!e.air&&e.D.veh){const pm=penMul(s.pen,armAt(e));if(pm<1){for(let i=0;i<2;i++)part('spark',e.x,e.y,.2);sfx('ping',e.x);if(G.t-e.ricT>.8){e.ricT=G.t;floatText(e.x,e.y-.25,pm<.5?'Abpraller':'Teildurchschlag',pm<.5?'#a9a59a':'#e8c75a')}}
       else if(s.track&&Math.random()<.25&&!e.stunT){e.stunT=2;floatText(e.x,e.y-.25,'Kettentreffer','#ffb07a')}}
     if(s.supp&&!e.D.veh&&!e.air)e.supT=1.5;
     hit(e,s.dmg*m/nb,s.pen);SRC=null;
