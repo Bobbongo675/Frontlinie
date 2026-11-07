@@ -4861,12 +4861,12 @@ const _canSee87=canSee;canSee=function(t,e){if(inSmoke(e))return false;return _c
 const _upd87=update;update=function(dt){if(G&&G.esmoke&&G.esmoke.length){for(const s of G.esmoke)s.t-=dt;G.esmoke=G.esmoke.filter(s=>s.t>0)}_upd87(dt)};
 // Bewegung: sprungweises Vorgehen, Deckung suchen, Panzer halten und drehen die Front, Pioniere graben sich ein
 // Deckung suchen: auf der Straße (Trichter, Schützenlöcher, Wracks, Deckungen am Wegrand), von der Straße weg nur in Ruinen
-function nearestCover(e){let best=null,bd=1.6;const a=pointAt(e.d,e.pi),nx=-a.dy,ny=a.dx;
-  const used=e.used||(e.used=new Set());
-  for(const s of[.2,.6,1,1.4])for(const sg of[1,-1]){const p=pointAt(e.d+s,e.pi),x=Math.floor(p.x+(-p.dy)*sg*.95),y=Math.floor(p.y+p.dx*sg*.95);if(terrAt(x,y)==='R'&&!used.has(x+','+y))return{x:x+.5,y:y+.5,tile:'R',key:x+','+y}}
+// Nächste Deckung voraus: Ruinen neben der Straße (hinein), Trichter, Schützenlöcher, Wracks, Deckungen am Wegrand
+function nearestCover(e){let best=null,bd=1.8;const a=pointAt(e.d,e.pi),nx=-a.dy,ny=a.dx,used=e.used||(e.used=new Set());
   const cand=(G.craters||[]).concat(G.holes||[],G.rcover||[]);if(G.wrecks)for(const w of G.wrecks)if(!w.plane&&w.kind!=='turpiece')cand.push(w);
   for(const q of cand){if(used.has(q))continue;const dx=q.x-a.x,dy=q.y-a.y,ahead=dx*a.dx+dy*a.dy,side=Math.abs(dx*nx+dy*ny);if(ahead<.05||ahead>1.4||side>.5)continue;const d=Math.hypot(q.x-e.x,q.y-e.y);if(d<bd){bd=d;best=q}}
-  if(!best)for(const s of[.3,.9])for(const sg of[1,-1]){const p=pointAt(e.d+s,e.pi),x=Math.floor(p.x+(-p.dy)*sg*.9),y=Math.floor(p.y+p.dx*sg*.9);if(terrAt(x,y)==='R'){best={x:x+.5,y:y+.5,tile:'R'};break}}
+  for(const s of[.2,.6,1,1.4])for(const sg of[1,-1]){const p=pointAt(e.d+s,e.pi),x=Math.floor(p.x+(-p.dy)*sg*.95),y=Math.floor(p.y+p.dx*sg*.95),key=x+','+y;
+    if(terrAt(x,y)!=='R'||used.has(key))continue;const r=rng(e.id*13+x*7+y),q={x:x+.3+r()*.4,y:y+.3+r()*.4,tile:'R',key},d=Math.hypot(q.x-e.x,q.y-e.y);if(d<bd){bd=d;best=q}}
   return best}
 const _special87=special;special=function(e,dt){const r=_special87(e,dt);if(r)return r;
   if(!e.D.veh&&!e.air){
@@ -4875,9 +4875,12 @@ const _special87=special;special=function(e,dt){const r=_special87(e,dt);if(r)re
     if(e.holdT>0){e.holdT-=dt;e.holdAll=(e.holdAll||0)+dt;if(e.fireT>0){e.fireT-=dt;if(e.holdAll<9)e.holdT=Math.max(e.holdT,.8)}e.prone=Math.max(e.prone||0,.2);
       if(e.holdT<=0){e.holdCd=G.t+2.5;if(e.coverP)(e.used||(e.used=new Set())).add(e.coverP.key||e.coverP);e.coverP=null;e.dugIn=0;e.holdAll=0}else return true}
     if(e.fireT>0){e.fireT-=dt;const q=e.coverP||(e.coverP=nearestCover(e));
-      if(q){const a=pointAt(e.d,e.pi),nx=-a.dy,ny=a.dx,lim=q.tile?.95:.45,want=Math.max(-lim,Math.min(lim,(q.x-a.x)*nx+(q.y-a.y)*ny));e.off+=Math.max(-dt*.9,Math.min(dt*.9,want-e.off));
-        if(e.k!=='pio'&&G.t>(e.holdCd||0)&&Math.hypot(q.x-e.x,q.y-e.y)<(q.tile?.6:.3)){e.holdT=2.5+Math.random()*1.5;e.holdAll=0;e.dugIn=q.tile||'crater';e.prone=.3;return true}
-        if(q.x!=null&&(q.x-a.x)*a.dx+(q.y-a.y)*a.dy<-.2)e.coverP=null}
+      if(q){const a=pointAt(e.d,e.pi),nx=-a.dy,ny=a.dx,lim=q.tile?1.2:.45,want=Math.max(-lim,Math.min(lim,(q.x-a.x)*nx+(q.y-a.y)*ny)),ahead=(q.x-a.x)*a.dx+(q.y-a.y)*a.dy,dist=Math.hypot(q.x-e.x,q.y-e.y);
+        e.off+=Math.max(-dt*1.1,Math.min(dt*1.1,want-e.off));
+        // in den Trichter kriechen, in die Ruine hineingehen
+        if(!q.tile&&dist<.7)e.prone=Math.max(e.prone||0,.25);
+        if(e.k!=='pio'&&G.t>(e.holdCd||0)&&dist<(q.tile?.22:.2)){e.holdT=2.5+Math.random()*1.5;e.holdAll=0;e.dugIn=q.tile||'crater';e.prone=.3;return true}
+        if(ahead<-.25)e.coverP=null;else if(ahead<.1&&Math.abs(want-e.off)>.04)return true}
       if(e.k!=='pio'&&G.t>(e.nextDrop||0)){e.prone=1.1+Math.random()*.5;e.nextDrop=G.t+e.prone+.9+Math.random()*.6}}
     else if(!e.holdT){e.coverP=null;if(Math.abs(e.off)>.44)e.off*=Math.pow(.3,dt)}
     if(e.k==='pio'&&!e.dug&&e.d>G.M.paths[e.pi].len*(.3+((e.id*37)%40)/100)){if(e.digT==null)e.digT=3;e.digT-=dt;
