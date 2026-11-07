@@ -257,7 +257,7 @@ const WEATHER={clear:{n:'Klar'},snow:{n:'Schneefall',veh:.88,d:'Fahrzeuge −12 
 /* ---------- Waffen ---------- */
 const TD={
   mg:   {cat:'MG · leicht',cost:60,range:3.3,rate:8,dmg:4,pen:1,ground:1,air:.35,kind:'direct',ammo:['std','apmg'],barrel:.33,rec:.015},
-  hmg:  {cat:'MG · schwer',cost:115,range:4.0,rate:5,dmg:9,pen:3,ground:1,air:.7,kind:'direct',ammo:['std','apmg'],barrel:.38,rec:.02},
+  hmg:  {cat:'MG · schwer',cost:115,range:4.0,rate:8,dmg:5.2,pen:3,ground:1,air:.7,kind:'direct',ammo:['std','apmg'],barrel:.38,rec:.02},
   mor:  {cat:'Mörser',cost:120,range:6.5,min:1.5,rate:.8,dmg:28,pen:2,splash:.9,kind:'arc',ammo:['he','shr','smoke'],barrel:.17,rec:.01},
   lfh:  {cat:'Artillerie · mittel',cost:230,range:16,min:2.2,rate:.38,dmg:70,pen:3,splash:1.2,kind:'arc',ammo:['he','ap','shr'],barrel:.55,rec:.07},
   sfh:  {cat:'Artillerie · schwer',cost:400,range:30,min:2.8,rate:.16,dmg:170,pen:5,splash:1.6,kind:'arc',ammo:['he','ap','shr'],barrel:.72,rec:.09},
@@ -283,7 +283,7 @@ const OBST={de:{wire:'Stacheldraht',trap:'Panzersperre',mine:'Minenfeld'},su:{wi
 const VAR={
  de:{
   mg:[['MG 13','7,92 mm',7.92,{jacket:'holes',mag:'box'}],['MG 34','7,92 mm',7.92,{jacket:'holes',mag:'drum',rate:1.1}],['MG 42','7,92 mm',7.92,{jacket:'slots',burst:2,rate:1.3,fort:1}]],
-  hmg:[['sMG 34 auf Lafette','7,92 mm',7.92,{n:1,jacket:'holes'}],['sMG 42 auf Lafette','7,92 mm',7.92,{n:1,jacket:'slots',rate:1.2}],['MG 151/20 Drilling','2 cm',20,{n:3,cannon:1,rate:.9,fort:1}]],
+  hmg:[['sMG 34 auf Lafette','7,92 mm',7.92,{n:1,jacket:'holes',rate:1.1}],['sMG 42 auf Lafette','7,92 mm',7.92,{n:1,jacket:'slots',rate:1.3}],['MG 151/20 Drilling','2 cm',20,{n:3,cannon:1,rate:.9,fort:1}]],
   mor:[['5 cm leGrW 36','5 cm',50,{len:.12,w:.05}],['8 cm GrW 34','8 cm',81,{len:.19,w:.07}],['kz. 8 cm GrW 42','8 cm',81,{len:.15,w:.064,rate:1.15,fort:1}]],
   lfh:[['7,5 cm leIG 18','7,5 cm',75,{len:.3,shield:1,k:.78}],['10,5 cm leFH 18','10,5 cm',105,{len:.5,shield:1}],['10,5 cm leFH 18M','10,5 cm',105,{len:.5,shield:1,brake:1,fort:1}]],
   sfh:[['15 cm sIG 33','15 cm',150,{len:.34,w:1.35,shield:1,k:1.05}],['15 cm sFH 18','15 cm',150,{len:.6}],['15 cm K 18','15 cm',150,{len:.88,k:1.28,fort:1}]],
