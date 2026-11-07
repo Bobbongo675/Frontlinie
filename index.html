@@ -1260,11 +1260,11 @@ function update(dt){
     if(t.hp<t.max*.4&&Math.random()<dt*3)part('smoke',t.cx+(Math.random()-.5)*.3,t.cy+(Math.random()-.5)*.3,.12,{col:'#2b2925',vz:.3,T:2});
     let best=null,bp=-1e9;
     for(const e of G.enemies){
-      if(e.dead)continue;if(e.air?!(s.air>0):!(s.ground>0))continue;
+      if(e.dead)continue;if(e.air?!(s.air>0):!(s.ground>0))continue;if(t.ign&&t.ign.id===e.id&&G.t<t.ign.until)continue;
       const dist=Math.hypot(e.x-t.cx,e.y-t.cy);if(dist>s.range||dist<s.min)continue;
       if(d.kind==='arc'&&!canSee(t,e))continue;
       const prog=e.fixed?.5:e.air?e.d/e.len:e.d/G.M.paths[e.pi].len;
-      const p=(t.prio==='strong'?e.hp:t.prio==='near'?-dist:t.prio==='tank'?(e.arm*10+(e.D.tank?50:0)+prog):prog)+(t.zones&&t.zones.length?zoneBonus(t,e):0);
+      const p=(t.prio==='strong'?e.hp:t.prio==='near'?-dist:t.prio==='tank'?(e.arm*10+(e.D.tank?50:0)+prog):prog)+(t.zones&&t.zones.length?zoneBonus(t,e):0)-(d.kind!=='arc'&&immuneTo(e,s.pen)?1e6:0);
       if(p>bp){bp=p;best=e}
     }
     if(best){
@@ -1379,7 +1379,7 @@ function fire(t,d,s,e){
   if(d.kind==='direct'){
     const m=e.air?s.air:s.ground;
     const nb=t.nb||1;SRC={k:'bullet',x:bx,y:by,cal,ap:!!ATAMMO[t.ammo]};CUR=t;
-    if(!e.air&&e.D.veh){const pm=penMul(s.pen,armAt(e));if(pm<1){for(let i=0;i<2;i++)part('spark',e.x,e.y,.2);sfx('ping',e.x);if(G.t-e.ricT>.8){e.ricT=G.t;floatText(e.x,e.y-.25,pm<.5?'Abpraller':'Teildurchschlag',pm<.5?'#a9a59a':'#e8c75a')}}
+    if(!e.air&&e.D.veh){const pm=penMul(s.pen,armAt(e));if(pm===0){if(t.bncId!==e.id){t.bncId=e.id;t.bnc=0}if(++t.bnc>=3){t.ign={id:e.id,until:G.t+6};t.bnc=0;floatText(t.cx,t.cy-.35,'Feuer eingestellt','#a9a59a')}}if(pm<1){for(let i=0;i<2;i++)part('spark',e.x,e.y,.2);sfx('ping',e.x);if(G.t-e.ricT>.8){e.ricT=G.t;floatText(e.x,e.y-.25,pm<.5?'Abpraller':'Teildurchschlag',pm<.5?'#a9a59a':'#e8c75a')}}
       else if(s.track&&Math.random()<.25&&!e.stunT){e.stunT=2;floatText(e.x,e.y-.25,'Kettentreffer','#ffb07a')}}
     if(s.supp&&!e.D.veh&&!e.air)e.supT=1.5;
     hit(e,s.dmg*m/nb,s.pen);SRC=null;
@@ -4874,6 +4874,7 @@ const _special87=special;special=function(e,dt){const r=_special87(e,dt);if(r)re
   return false};
 // Zeichnen: Trichter, Schützenlöcher und Panzernebel
 // Anzeige: mm in den Karten
+function immuneTo(e,pen){if(e.air||!e.D.veh||pen==null)return false;const m=Math.min(e.armS??e.arm,e.armR??e.armS??e.arm);return m>0&&pen<m*.9}
 function penLabel(t,s){if(s.pen==null)return'–';const n=Math.round(s.pen),f=Math.round(s.pen2??s.pen);return(TD[t.type].kind!=='arc'&&f!==n?n+'→'+f:n)+' mm'+(s.penEst?'*':'')}
 
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
