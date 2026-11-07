@@ -4878,10 +4878,6 @@ const _special87=special;special=function(e,dt){const r=_special87(e,dt);if(r)re
 // Zeichnen: Trichter, Schützenlöcher und Panzernebel
 // Anzeige: mm in den Karten
 function immuneTo(e,pen){if(e.air||!e.D.veh||pen==null)return false;const m=Math.min(e.armS??e.arm,e.armR??e.armS??e.arm);return m>0&&pen<m*.9}
-const _drawEnemy88=drawEnemy;drawEnemy=function(c,e){if(e.holdT>0&&!e.D.veh&&!e.air){const by=G.towers.length?G.towers.reduce((b,t)=>{const d=Math.hypot(t.cx-e.x,t.cy-e.y);return d<b[0]?[d,t]:b},[1e9,null])[1]:null;
-  const a=by?Math.atan2(by.cy-e.y,by.cx-e.x):e.ang;c.save();c.translate(e.x,e.y);c.rotate(a);c.lineCap='round';
-  c.strokeStyle='rgba(40,32,22,.55)';c.lineWidth=.05;c.beginPath();c.arc(-.02,0,.14,-1.1,1.1);c.stroke();
-  c.strokeStyle=e.dugIn==='R'?'#6f675c':'#6a5638';c.lineWidth=.035;c.beginPath();c.arc(-.03,0,.13,-1,1);c.stroke();c.restore()}_drawEnemy88(c,e)};
 function penLabel(t,s){if(s.pen==null)return'–';const n=Math.round(s.pen),f=Math.round(s.pen2??s.pen);return(TD[t.type].kind!=='arc'&&f!==n?n+'→'+f:n)+' mm'+(s.penEst?'*':'')}
 
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
