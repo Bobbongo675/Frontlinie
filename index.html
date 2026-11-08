@@ -4910,6 +4910,13 @@ const _fire88=fire;fire=function(t,d,s,e){const n0=G.tracers.length;_fire88(t,d,
     tr.x2=tr.x1+dx*k;tr.y2=tr.y1+dy*k;if(Math.random()<.5)part('dust',tr.x2,tr.y2,.05,{col:e.dugIn==='R'?'#8a8278':'#7d6e55'})}};
 // Niedergehalten: wer in Deckung unter Feuer liegt, schießt nicht zurück
 const _ea88=enemyAttack;enemyAttack=function(e,dt){if(!e.D.veh&&!e.air&&e.holdT>0&&e.fireT>0){e.cdR=Math.max(e.cdR||0,.3);return}_ea88(e,dt)};
+// Einschläge von Mörsern und Artillerie treffen auch Gefallene: nah dran hochgeschleudert (mit GORE: Gliedmaßen abgerissen), weiter weg verschoben
+const _impact90=impact;impact=function(x,y,cal,kind){_impact90(x,y,cal,kind);if(kind!=='he'||cal<50||!G||!G.bodies)return;
+  const R=.25+cal/400;let n=0;for(const b of G.bodies){if(n>=10)break;if(b.stand>0||!b.landed)continue;const d=Math.hypot(b.x-x,b.y-y);if(d>=R)continue;n++;
+    const f=1-d/R,away=d>.01?Math.atan2(b.y-y,b.x-x):Math.random()*6.28;
+    if(d<R*.45){const v=.5+f*1.3;b.landed=0;b.z=.02;b.vz=1+f*2.2;b.vx=Math.cos(away)*v;b.vy=Math.sin(away)*v;b.spin=(Math.random()-.5)*12;
+      if(GORE){if(Math.random()<.55+f*.3)limbLoss(b,away);if(f>.7&&Math.random()<.4)limbLoss(b,away)}if(cal>=105&&f>.75&&Math.random()<.5)b.burnt=1}
+    else{const k=f*.22;b.x+=Math.cos(away)*k;b.y+=Math.sin(away)*k;b.a+=(Math.random()-.5)*.7*f;for(let i=0;i<2;i++)part('dust',b.x,b.y,.05)}}};
 function penLabel(t,s){if(s.pen==null)return'–';const n=Math.round(s.pen),f=Math.round(s.pen2??s.pen);return(TD[t.type].kind!=='arc'&&f!==n?n+'→'+f:n)+' mm'+(s.penEst?'*':'')}
 
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
