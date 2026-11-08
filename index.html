@@ -197,7 +197,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <div class="ov" id="ovStart">
   <div class="sheet">
     <h1 class="brand"><small>Tower Defense · Ostfront</small>Frontlinie</h1>
-    <p class="lede">Halte die Stellung 15 Wellen lang. Infanterie, Panzer und Flugzeuge greifen an, und sie schießen zurück.</p>
+    <p class="lede">Halte die Front gegen Infanterie, Panzer und Flugzeuge. Sie greifen deine Stellungen an und schießen zurück.</p>
     <div id="scenList" style="display:flex;flex-direction:column;gap:12px"></div>
     <label class="opt"><input type="checkbox" id="optGore"><span><b>Blut und Gefallene anzeigen</b><small>Treffer, Blutspuren und liegende Soldaten. Ohne Häkchen verschwinden Getroffene wie bisher.</small></span></label>
     <label class="opt"><input type="checkbox" id="optDev"><span><b>Entwicklermodus</b><small>Unbegrenzter Nachschub, Feuerschlag ohne Wartezeit, Stellung fällt nicht. Kein Speichern, keine Sterne.</small></span></label>
@@ -3263,6 +3263,7 @@ function draw(){
   c.globalAlpha=1;
   drawWeather(c);
   if(G.sel&&!TD[G.sel.type].obstacle){const s=stats(G.sel);c.setLineDash([.12,.08]);c.lineWidth=.035;c.strokeStyle='rgba(224,168,62,.9)';c.beginPath();c.arc(G.sel.cx,G.sel.cy,s.range,0,7);c.stroke();
+    if(G.sel.lvl<maxLvl(G.sel.type)){const n=stats(Object.assign({},G.sel,{lvl:G.sel.lvl+1}));if(n.range>s.range+.05&&n.range<500){c.strokeStyle='rgba(159,184,102,.8)';c.beginPath();c.arc(G.sel.cx,G.sel.cy,n.range,0,7);c.stroke()}}
     if(s.min){c.strokeStyle='rgba(214,93,66,.8)';c.beginPath();c.arc(G.sel.cx,G.sel.cy,s.min,0,7);c.stroke()}c.setLineDash([])}
   if(G.sel){c.strokeStyle='#e0a83e';c.lineWidth=.04;c.strokeRect(G.sel.x+.03,G.sel.y+.03,.94,.94)}
   if(G.build&&G.ghost){const g=G.ghost,tt={type:G.build,x:g.x,y:g.y,cx:g.x+.5,cy:g.y+.5,lvl:1,ammo:TD[G.build].ammo?TD[G.build].ammo[0]:null,ang:-Math.PI/2,recoil:0};
@@ -4557,7 +4558,7 @@ function briefing(i){const m=CAMP[i];let o=$('#ovBrief');if(!o){o=document.creat
     if(b.dataset.b==='go'){newGame(m.id,m.side);radio(m.title+', '+m.date+'. '+m.goal)}}}
 const _buildStart=buildStart;buildStart=function(){_buildStart();const box=$('#scenList');if(!box)return;
   const done=campDone(),sec=document.createElement('section');sec.className='scen camp';
-  sec.innerHTML=`<h2>Feldzug<span>${Math.min(done,CAMP.length)}/${CAMP.length} geschafft</span></h2><p>Fünf kurze Gefechte von 1941 bis 1945 auf kleinen Karten fürs Handy. Jede Mission hat eine Lagebesprechung und einen Blick auf die Geschichte.</p><div class="mlist"></div>`;
+  sec.innerHTML=`<h2>Feldzug<span>${Math.min(done,CAMP.length)}/${CAMP.length} geschafft</span></h2><p>Fünf Gefechte von 1941 bis 1945. Jede Mission hat eine Lagebesprechung und einen Blick auf die Geschichte.</p><div class="mlist"></div>`;
   const L=sec.querySelector('.mlist');
   CAMP.forEach((m,i)=>{const lock=i>done,st=getStars(m.id,m.side),b=document.createElement('button');b.className='mis'+(lock?' lock':'')+(i===done?' next':'');b.disabled=lock;
     b.innerHTML=`<span class="mn">${i+1}</span><span class="mt"><b>${m.title}</b><small>${m.date} · ${SIDES[m.side].name}</small></span><span class="ms">${lock?'gesperrt':st?'★'.repeat(st)+'☆'.repeat(3-st):i===done?'neu':''}</span>`;
@@ -4919,6 +4920,146 @@ const _impact90=impact;impact=function(x,y,cal,kind){_impact90(x,y,cal,kind);if(
       if(GORE){if(Math.random()<.55+f*.3)limbLoss(b,away);if(f>.7&&Math.random()<.4)limbLoss(b,away)}if(cal>=105&&f>.75&&Math.random()<.5)b.burnt=1}
     else{const k=f*.22;b.x+=Math.cos(away)*k;b.y+=Math.sin(away)*k;b.a+=(Math.random()-.5)*.7*f;for(let i=0;i<2;i++)part('dust',b.x,b.y,.05)}}};
 function penLabel(t,s){if(s.pen==null)return'–';const n=Math.round(s.pen),f=Math.round(s.pen2??s.pen);return(TD[t.type].kind!=='arc'&&f!==n?n+'→'+f:n)+' mm'+(s.penEst?'*':'')}
+
+/* ===================== v110: Oberfläche verständlicher ===================== */
+// Obere Leiste: Symbole statt abgeschnittener Wörter, Antippen erklärt den Wert
+(function(){
+  const IC=['<svg viewBox="0 0 24 24"><path d="M5 21V3M5 4h12l-2 4 2 4H5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg>',
+    '<svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M3 12.5h18M9.5 8V5h5v3" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>',
+    '<svg viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5z" fill="currentColor"/><path d="M8 12l3 3 5-6" fill="none" stroke="#191b15" stroke-width="2.4"/></svg>'];
+  const TIP=['Welle: aktuelle Welle und wie viele die Mission hat.','Nachschub: damit baust, rüstest und befestigst du.','Front: so viele Durchbrüche hält die Front noch aus. Bei 0 ist das Gefecht verloren.'];
+  [...document.querySelectorAll('#top .hud .stat')].slice(0,3).forEach((s,i)=>{const lb=s.querySelector('.lbl'),b=s.querySelector('b');if(!lb||!b)return;
+    if(i===2)lb.textContent='Front';const ic=document.createElement('span');ic.className='sic s'+i;ic.innerHTML=IC[i];
+    const w=document.createElement('span');w.className='stx';w.append(b,lb);s.append(ic,w);s.classList.add('st2');s.title=TIP[i];
+    s.addEventListener('click',()=>toast(TIP[i]))});
+  // Vollbild wandert auf dem Handy ins Menü
+  const col=$('#ovMenu .col'),bf=$('#bFull');
+  if(col&&bf&&(document.fullscreenEnabled||document.webkitFullscreenEnabled)){const b=document.createElement('button');b.id='mFull';b.textContent='Vollbild';b.className='phOnly';
+    b.addEventListener('click',()=>{closeMenu();bf.click()});col.insertBefore(b,$('#mRestart'))}
+  const st=document.createElement('style');st.textContent=`
+.stat.st2{flex-direction:row;align-items:center;gap:6px;cursor:pointer}
+.stat.st2 .sic{flex:none;width:18px;height:18px;color:var(--accent);display:grid}.stat.st2 .sic svg{width:100%;height:100%}
+.stat.st2 .sic.s2{color:var(--ok)}#sHq.low .sic,#sHq.warn .sic{color:var(--danger)}
+.stat.st2 .stx{display:flex;flex-direction:column;min-width:0}
+.stat.st2 .stx .lbl{white-space:nowrap}
+#ovMenu .phOnly{display:none}body.phone #ovMenu .phOnly{display:block}
+body.phone #bFull{display:none!important}
+body.phone .hud{grid-template-columns:minmax(0,1fr) minmax(0,1.35fr) minmax(0,1fr) auto}
+body.phone .stat.st2{padding:2px 6px;gap:5px;justify-content:flex-start}
+body.phone .stat.st2 b{font-size:20px;line-height:1.05}
+body.phone .stat.st2 .lbl{font-size:9.5px;letter-spacing:0}
+body.phone .ctrl .sq{width:36px}
+body.phone #tray .gcard .gn{white-space:normal;overflow:visible;line-height:1.05}
+/* Baukarten */
+.gcard.poor .gp,.card.poor .cp{color:var(--danger)}
+.gcard .gb{white-space:nowrap}
+body.phone #tray.d1 .groups,body.phone #tray.d2 .groups{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;overflow:visible;margin:0;padding:0}
+body.phone #tray.d1 .gcard,body.phone #tray.d2 .gcard{width:auto;min-height:60px;padding:4px 4px 4px;flex:initial}
+body.phone #tray .gcard .gb{position:static;align-self:flex-start;border:0;padding:0;font-size:10px;line-height:12px;order:3}
+body.phone #tray .gcard .gn{font-size:12.5px}body.phone #tray .gcard .gp{font-size:13px}
+body.phone #tray .gcard .glyph{height:22px}
+.rbars{display:grid;grid-template-columns:auto auto;justify-content:start;gap:1px 5px;font-size:10.5px;color:var(--muted);align-items:center;margin:2px 0}
+.rbars .pp{display:flex;gap:2px}.rbars .pp i{width:8px;height:7px;background:#3a3e32}.rbars .pp i.on{background:var(--ok)}
+/* Gewählte Stellung */
+#tray .sel2 .snm{display:flex;align-items:center;gap:10px}
+#tray .sel2 .snm b{font-size:21px;line-height:1.1}
+#tray .lvp{display:flex;gap:3px;margin-left:auto}#tray .lvp i{width:16px;height:6px;background:#3a3e32}#tray .lvp i.on{background:var(--accent)}
+#tray .hpl{display:flex;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted);margin-top:2px}
+#tray .acts2{display:flex;gap:6px;margin:8px 0}
+#tray .acts2 .act{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:1px;padding:6px 7px;background:var(--panel-2);border:1px solid var(--line);text-align:left;min-height:58px}
+#tray .acts2 .act .t{font-size:10px;letter-spacing:.02em;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;color:var(--muted)}
+#tray .acts2 .act .n{font-size:14px;font-weight:700;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+#tray .acts2 .act .c{font-family:var(--font-display);font-size:15px;color:var(--accent)}
+#tray .acts2 .act.up{flex:1.35;background:#3c4a25;border-color:var(--ok)}#tray .acts2 .act.up .t{color:#cfe2a3}
+#tray .acts2 .act.rep{border-color:var(--danger)}
+#tray .acts2 .act.sell .n{color:var(--ok);font-family:var(--font-display);font-size:16px}
+#tray .svs em.w{color:var(--danger)}
+body.phone #tray .acts2.four{display:grid;grid-template-columns:1fr 1fr}body.phone #tray .acts2.four .act{min-height:50px}
+#tray .acts2 .act:disabled{opacity:.45}#tray .acts2 .act:disabled .c{color:var(--danger)}
+#tray .acts2 .act.max{opacity:.6}
+#tray .svs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+#tray .svs>span{background:var(--panel);border:1px solid var(--line);padding:3px 5px;min-width:0}
+#tray .svs small{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+#tray .svs b{font-size:16px}#tray .svs em{font-style:normal;color:var(--ok);font-size:12.5px;font-weight:700;margin-left:2px}
+#tray .sh-head .xcl{flex:none;width:40px;height:36px;background:none;border:1px solid var(--line);font-size:17px;font-weight:700}
+body.phone #tray .sh-head .pgo.mini{padding:0 9px;font-size:13px}
+/* Siegbildschirm: alle Knöpfe sichtbar */
+#ovEnd .row{flex-wrap:wrap}#ovEnd .row button{flex:1 1 40%;min-width:0}
+/* Start: Reiter */
+.stabs{display:flex;border:1px solid var(--line)}.stabs button{flex:1;padding:11px 6px;font-weight:700;font-size:16px;background:var(--panel);border:0;border-left:1px solid var(--line);color:var(--muted)}
+.stabs button:first-child{border-left:0}.stabs button.on{background:var(--fg);color:var(--bg)}
+#scenList [hidden]{display:none!important}
+.mis .ms small{display:block;color:var(--muted);font-size:11.5px;text-align:right}`;document.head.appendChild(st)})();
+
+// Kein Gefechtsbericht mehr nach jeder Welle, die Details stehen im Spielbericht
+showReport=function(){};
+
+// Wogegen ein Waffentyp taugt: Panzer aus dem Durchschlag, Infanterie und Luft nach Rolle
+const ROLE_IA={inf:[1,0],mg:[2,1],hmg:[3,1],mor:[2,0],lfh:[3,0],sfh:[3,0],ssfh:[3,0],rak:[3,0],pak:[1,0],flakl:[2,2],flakh:[1,3]};
+function pzScore(k){const d=TD[k];let p=0;for(const a of(d.ammo||[null])){const q=penOf(G.side,k,1,a);if(q&&q[0]>p)p=q[0]}return p<15?0:p<45?1:p<90?2:3}
+function roleBars(k){const r=ROLE_IA[k];if(!r)return'';const pp=n=>`<span class="pp">${[0,1,2].map(i=>`<i class="${i<n?'on':''}"></i>`).join('')}</span>`;
+  return`<span class="rbars"><span>Inf</span>${pp(r[0])}<span>Pz</span>${pp(pzScore(k))}<span>Luft</span>${pp(r[1])}</span>`}
+
+// Gewählte Stellung: Aktionen oben, Verbesserung sichtbar
+function selPanel(t){const d=TD[t.type],s=stats(t),mx=maxLvl(t.type),f=t.hp/t.max,T=TERR[terrAt(t.x,t.y)];
+  const n=t.lvl<mx?stats(Object.assign({},t,{lvl:t.lvl+1})):null;
+  const fm=v=>v>=500?'Karte':fmt(v),dif=(a,b,f2)=>b!=null&&f2(b)!==f2(a)?`<em class="${b<a?'w':''}">→${f2(b)}</em>`:'';
+  const uc=t.lvl<mx?upCost(t):0,rc=repCost(t),fo=t.fort||0,fc=fortOk(t)&&fo<3?fortCost(t):0;
+  let a='';
+  if(t.lvl<mx)a+=`<button class="act up" data-act="up" ${G.money<uc?'disabled':''}><span class="t">⬆ Aufrüsten</span><span class="n">${nameOf(G.side,t.type,t.lvl+1)}</span><span class="c">${uc}</span></button>`;
+  else a+=`<div class="act max"><span class="t">Aufrüsten</span><span class="n">Höchste Stufe</span></div>`;
+  if(rc>0)a+=`<button class="act rep" data-act="rep" ${G.money<rc?'disabled':''}><span class="t">Reparieren</span><span class="n">${Math.round(f*100)} %</span><span class="c">${rc}</span></button>`;
+  if(fc)a+=`<button class="act fortb" data-act="fort" ${G.money<fc?'disabled':''}><span class="t">Befestigen</span><span class="n">${FORT[fo+1].n}</span><span class="c">${fc}</span></button>`;
+  a+=`<button class="act sell" data-act="sell"><span class="t">${t.fresh?'Rückgängig':'Abbauen'}</span><span class="n">+${sellVal(t)}</span></button>`;
+  const pen=s.pen?Math.round(s.pen)+' mm':'–',cv=coverOf(t);
+  let v=`<span><small>Reichw.</small><b>${fm(s.range)}</b>${n?dif(s.range,n.range,fm):''}</span><span><small>Schaden</small><b>${Math.round(s.dmg)}</b>${n?dif(s.dmg,n.dmg,x=>Math.round(x)):''}</span>`+
+    `<span><small>Schuss/s</small><b>${fmt(s.rate)}</b>${n?dif(s.rate,n.rate,fmt):''}</span><span><small>Durchschl.</small><b>${pen}</b></span>`;
+  const bits=[];if(T.range>1)bits.push('Höhe +Reichweite');if(cv<1)bits.push(Math.round((1-cv)*100)+' % Deckung');if(fo)bits.push(FORT[fo].n);if(s.salvo)bits.push('Salve '+s.salvo+'×');
+  let h=`<div class="info sel2"><div class="snm"><b>${nameOf(G.side,t.type,t.lvl)}</b><span class="lvp" title="Stufe ${t.lvl} von ${mx}">${[1,2,3].slice(0,mx).map(i=>`<i class="${i<=t.lvl?'on':''}"></i>`).join('')}</span></div>`+
+    `<div class="hpbar"><i class="${f<.4?'low':''}" style="width:${Math.max(0,f*100)}%"></i></div>`+
+    `<div class="hpl"><span>Leben ${Math.ceil(t.hp)}/${Math.round(t.max)}</span><span>Stufe ${t.lvl} von ${mx} · ${t.kills||0} Abschüsse</span></div>`+
+    `<div class="acts2${(a.match(/class="act /g)||[]).length>3?' four':''}">${a}</div><div class="svs">${v}</div>`+(bits.length?`<div class="hpl"><span>${bits.join(' · ')}</span></div>`:'')+
+    `<div class="seg"><span class="lbl">Munition</span>${d.ammo.map(x=>`<button data-ammo="${x}" class="${t.ammo===x?'on':''}">${AM[x].n}</button>`).join('')}</div>`+
+    `<div class="seg"><span class="lbl">Ziel</span>${PRIO.map(([k,nm])=>`<button data-prio="${k}" class="${t.prio===k?'on':''}">${nm}</button>`).join('')}</div>`+
+    `<div class="adesc">${AM[t.ammo].d}</div>${_towerExtra(t)}</div>`;
+  return h}
+
+const _rt110=renderTray;renderTray=function(){_rt110();if(!G||!G.M)return;const tray=$('#tray'),head=tray.querySelector('.sh-head'),body=tray.querySelector('.sh-body');
+  // Gruppen: Preisspanne, Anzahl Typen, keine Rollentexte
+  tray.querySelectorAll('.gcard').forEach(b=>{const g=BGRP.find(x=>x.id===b.dataset.grp)||BGRP.find(x=>x.it.length===1&&x.it[0]===b.dataset.build);if(!g)return;
+    const cs=g.it.map(k=>TD[k].cost),mn=Math.min(...cs),mx=Math.max(...cs),gp=b.querySelector('.gp');if(gp)gp.textContent=mn===mx?mn:mn+'–'+mx;
+    const gb=b.querySelector('.gb');if(gb)gb.textContent=g.it.length+' Typen';const gn=b.querySelector('.gn');if(gn)gn.textContent=gn.textContent.replace('Feuerleitung','Feuer\u00adleitung').replace('Hindernisse','Hinder\u00adnisse').replace('Infanterie','Infan\u00adterie');b.querySelectorAll('.gr').forEach(x=>x.remove())});
+  // Typen: Balken je Geschütz
+  tray.querySelectorAll('.card[data-build]').forEach(b=>{const k=b.dataset.build;if(!ROLE_IA[k]||b.querySelector('.rbars'))return;const cp=b.querySelector('.cp');
+    if(cp)cp.insertAdjacentHTML('beforebegin',roleBars(k));else b.insertAdjacentHTML('beforeend',roleBars(k))});
+  // Gewählte Stellung
+  const t=G.sel;if(t&&G.towers.includes(t)&&!TD[t.type].obstacle&&!TD[t.type].noFire&&body&&!G.fc){body.innerHTML=selPanel(t)}
+  if(head){
+    if(G.aim||G.aim2){const lb=head.querySelector('.lbl'),hn=head.querySelector('.hint');if(lb){lb.hidden=false;lb.textContent=G.aim2?'Luftangriff':'Feuerschlag'}if(hn)hn.textContent='Ziel auf der Karte antippen'}
+    // Schließen statt „‹ Bauen“, wenn etwas auf der Karte gewählt ist
+    if(G.sel||G.selE||G.selHQ){const bk=head.querySelector('.back[data-act="home"]');if(bk)bk.remove();if(!head.querySelector('.xcl')){const x=document.createElement('button');x.className='xcl';x.dataset.act='home';x.setAttribute('aria-label','Schließen');x.textContent='✕';head.appendChild(x)}}
+    // Welle immer erreichbar (Handy)
+    if(PHONE()&&!head.querySelector('.pgo')&&G.state==='build'&&!G.over&&!G.aim&&!G.aim2&&!G.zoneSet){const gb=document.createElement('button');gb.className='pgo mini';gb.dataset.act='pgo';gb.textContent='Welle '+(G.wave+1)+' ▶';
+      const tg=head.querySelector('.tog');if(tg)head.insertBefore(gb,tg);else head.appendChild(gb);const hn=head.querySelector('.hint');if(hn)hn.hidden=true}}
+  updateInsets()};
+// Klick auf ✕ (data-act="home") nutzt die vorhandene Rückkehr zum Baumenü
+
+// Startbildschirm: Reiter Feldzug / Freie Gefechte, beste Frontstärke je Mission
+const bestKey=(s,f)=>`frontlinie-best-${s}-${f}`;
+function getBest(s,f){try{const v=localStorage.getItem(bestKey(s,f));return v==null?null:+v}catch(e){return null}}
+const _endGame110=endGame;endGame=function(won){const was=G.over;_endGame110(won);if(was||!won||DEV)return;try{const b=getBest(G.scen,G.side);if(b==null||G.lives>b)localStorage.setItem(bestKey(G.scen,G.side),G.lives)}catch(e){}};
+const _bs110=buildStart;buildStart=function(){_bs110();const box=$('#scenList');if(!box)return;
+  const camp=box.querySelector('section.camp');
+  if(camp)camp.querySelectorAll('.mis').forEach((b,i)=>{const m=CAMP[i];if(!m)return;const bs=getBest(m.id,m.side),ms=b.querySelector('.ms');if(bs!=null&&ms&&!ms.querySelector('small'))ms.insertAdjacentHTML('beforeend',`<small>beste Front ${bs}/20</small>`)});
+  box.querySelectorAll('section.scen:not(.camp)').forEach(sec=>{const id=Object.keys(SCEN).find(k=>SCEN[k].title===sec.querySelector('h2').firstChild.textContent);if(!id)return;
+    sec.querySelectorAll('.side').forEach((b,j)=>{const f=SCEN[id].sides[j],bs=getBest(id,f),sm=b.querySelector('small');if(bs!=null&&sm)sm.insertAdjacentHTML('beforeend',` · beste Front ${bs}`)})});
+  const free=[...box.querySelectorAll('section.scen:not(.camp)')];const fh=box.querySelector('.freehd');if(fh&&camp)fh.hidden=true;
+  if(!camp||!free.length)return;
+  let tab='camp';try{tab=localStorage.getItem('frontlinie-tab')||'camp'}catch(e){}
+  const bar=document.createElement('div');bar.className='stabs';bar.innerHTML='<button data-tab="camp">Feldzug</button><button data-tab="free">Freie Gefechte</button>';
+  box.insertBefore(bar,camp);
+  const show=v=>{tab=v;camp.hidden=v!=='camp';free.forEach(e=>e.hidden=v!=='free');bar.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.tab===v));try{localStorage.setItem('frontlinie-tab',v)}catch(e){}};
+  bar.addEventListener('click',ev=>{const b=ev.target.closest('button');if(b)show(b.dataset.tab)});show(tab)};
 
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
 
