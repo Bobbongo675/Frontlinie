@@ -259,9 +259,9 @@ const TD={
   mg:   {cat:'MG · leicht',cost:60,range:3.3,rate:8,dmg:4,pen:1,ground:1,air:.35,kind:'direct',ammo:['std','apmg'],barrel:.33,rec:.015},
   hmg:  {cat:'MG · schwer',cost:115,range:4.0,rate:8,dmg:5.2,pen:3,ground:1,air:.7,kind:'direct',ammo:['std','apmg'],barrel:.38,rec:.02},
   mor:  {cat:'Mörser',cost:120,range:6.5,min:1.5,rate:.45,dmg:28,pen:2,splash:.9,kind:'arc',ammo:['he','shr','smoke'],barrel:.17,rec:.01},
-  lfh:  {cat:'Artillerie · mittel',cost:230,range:16,min:2.2,rate:.38,dmg:70,pen:3,splash:1.2,kind:'arc',ammo:['he','ap','shr'],barrel:.55,rec:.07},
-  sfh:  {cat:'Artillerie · schwer',cost:400,range:30,min:2.8,rate:.16,dmg:170,pen:5,splash:1.6,kind:'arc',ammo:['he','ap','shr'],barrel:.72,rec:.09},
-  ssfh: {cat:'Artillerie · schwerste',cost:640,range:999,min:3.6,rate:.07,dmg:400,pen:7,splash:2.1,kind:'arc',ammo:['he','ap','shr'],barrel:.95,rec:.13},
+  lfh:  {cat:'Artillerie · mittel',cost:230,range:16,min:2.2,rate:.28,dmg:70,pen:3,splash:1.2,kind:'arc',ammo:['he','ap','shr'],barrel:.55,rec:.07},
+  sfh:  {cat:'Artillerie · schwer',cost:400,range:30,min:2.8,rate:.12,dmg:170,pen:5,splash:1.6,kind:'arc',ammo:['he','ap','shr'],barrel:.72,rec:.09},
+  ssfh: {cat:'Artillerie · schwerste',cost:640,range:999,min:3.6,rate:.055,dmg:400,pen:7,splash:2.1,kind:'arc',ammo:['he','ap','shr'],barrel:.95,rec:.13},
   rak:  {cat:'Raketenartillerie',cost:290,range:14,min:2.6,rate:.15,dmg:150,pen:3,splash:1.25,kind:'arc',ammo:['he','smoke'],barrel:.3,rec:.02},
   pak:  {cat:'Panzerabwehr',cost:170,range:5.0,rate:.8,dmg:95,pen:8,ground:1,air:0,kind:'direct',ammo:['ap','pakhe','hvap'],barrel:.52,rec:.06},
   flakl:{cat:'Flak · leicht',cost:140,range:4.5,rate:4,dmg:14,pen:3,ground:.6,air:1,kind:'direct',ammo:['std','apmg'],barrel:.38,rec:.02},
@@ -3989,7 +3989,7 @@ MAPS.kursk_su.lanes=['Achse Süd','Achse West','Achse Bahndamm'];MAPS.kursk_de.l
 MAPS.ost.lanes=['Achse West','Achse Ost'];MAPS.test.lanes=['Anmarschweg'];
 MAPS.kursk_su.airNames=['Luftkorridor Süd','Luftkorridor West','Luftkorridor Südost'];MAPS.kursk_de.airNames=['Luftkorridor Nord','Luftkorridor Nordwest','Luftkorridor Ost'];
 MAPS.ost.airNames=['Luftkorridor West','Luftkorridor Ost'];
-SCEN.kursk.waveMul=1.6;SCEN.ost.waveMul=1.55;SCEN.kursk.laneGroup=4;
+SCEN.kursk.waveMul=1.95;SCEN.ost.waveMul=1.9;SCEN.kursk.laneGroup=4;
 const ENDESC={recon:'Rast voraus und meldet deine Stellungen. Markierte Stellungen nimmt die Feindartillerie zuerst ins Ziel.',
   pio:'Räumt Minen, Draht und Sperren auf dem Weg. Mit MG, Mörser oder Schrapnell bekämpfen.',
   goliath:'Ferngelenkter Sprengträger. Rammt Sperren und Stellungen am Weg. Jedes MG hält ihn auf.',
@@ -4433,7 +4433,7 @@ const CAMP=[
   src:'Wikipedia: Defense of Brest Fortress',
   win:'Im Spiel hältst du stand. Historisch fiel die Festung nach etwa acht Tagen, rund 6.800 Verteidiger gerieten in Gefangenschaft.',
   radio:{1:'Brücke über den Bug unter Feuer. Infanterie setzt über.',3:'Sturmgeschütze am Westufer gemeldet.',5:'Nebelwerfer schießen auf die Kasematten.',7:'Flugzeuge im Anflug auf die Zitadelle.'},
-  waves:8,top:11,maxTier:2,money:700,allow:['inf','car','recon','apc','pio','ltank','sturm','attack','fighter'],mod:{sturm:1.4},weather:[['clear',1]],
+  waves:8,top:13,maxTier:2,money:700,allow:['inf','car','recon','apc','pio','ltank','sturm','attack','fighter'],mod:{sturm:1.4},weather:[['clear',1]],
   map:{seed:101,g1:'#7d7a50',road:'#5d4c37',cols:11,rows:19,
    labels:[[5.5,4.3,'Bug',0,1],[5.5,16.4,'Zitadelle',0,.8],[5.5,1.6,'Westufer',0,.6]],
    areas:[['w',0,4,10,5],['f',0,0,1,2],['f',9,0,10,2],['g',4,0,6,2],['f',0,7,1,8],
@@ -4448,7 +4448,7 @@ const CAMP=[
   src:'Wikipedia: Panfilov’s Twenty-Eight Guardsmen',
   win:'Die Station ist gehalten. Moskau wurde im Winter 1941 nicht genommen.',
   radio:{1:'Kampfgruppen der 2. Panzer-Division vor Dubossekowo.',4:'Panzer am Bahndamm.',6:'Sturzkampfbomber über der Station.',9:'Letzter Ansturm auf die Station.'},
-  waves:9,top:15,maxTier:2,money:750,allow:['inf','car','recon','apc','pio','ltank','mtank','sturm','attack','fighter','bomber'],mod:{mtank:1.2},weather:[['snow',.7],['clear',.3]],
+  waves:9,top:18,maxTier:2,money:750,allow:['inf','car','recon','apc','pio','ltank','mtank','sturm','attack','fighter','bomber'],mod:{mtank:1.2},weather:[['snow',.7],['clear',.3]],
   map:{seed:202,g1:'#9a9b8c',road:'#6b6150',snow:1,cols:11,rows:19,
    labels:[[8.3,5.6,'Dubossekowo',0,.75],[2.2,7.4,'Bahnlinie',0,.6],[8.1,14.2,'Höhe',0,.6]],
    areas:[['e',0,7,10,7],['b',7,6,8,6],['b',9,5,9,5],['f',0,0,1,3],['f',6,0,7,3],['f',0,12,2,15],['f',9,15,10,18],['h',7,13,8,14],['b',1,17,2,17],['R',4,15,4,15]],
@@ -4461,7 +4461,7 @@ const CAMP=[
   src:'Wikipedia: 37th Guards Rifle Division',
   win:'Im Spiel hält das Werk. Historisch wurde die Division dort fast vollständig aufgerieben.',
   radio:{1:'Stoßtrupps zwischen den Werkhallen.',4:'Pioniere räumen unsere Sperren.',6:'Panzer auf dem Werksgelände.',10:'Der Feind will zur Wolga durchbrechen.'},
-  waves:10,top:18,maxTier:3,money:800,allow:['inf','recon','apc','pio','ltank','mtank','sturm','attack','bomber','fighter'],mod:{inf:1.4,mtank:1.2},weather:[['clear',.6],['rain',.2],['fog',.2]],
+  waves:10,top:21,maxTier:3,money:800,allow:['inf','recon','apc','pio','ltank','mtank','sturm','attack','bomber','fighter'],mod:{inf:1.4,mtank:1.2},weather:[['clear',.6],['rain',.2],['fog',.2]],
   map:{seed:303,g1:'#7a7262',road:'#5a5048',cols:11,rows:19,
    labels:[[5.5,18.2,'Wolga',0,1],[5.5,2.4,'Traktorenwerk',0,.7]],
    areas:[['w',0,17,10,18],['b',1,6,3,8],['b',7,6,9,8],['b',1,11,2,13],['b',8,11,9,13],['b',0,0,0,2],['b',10,0,10,2],
@@ -4475,7 +4475,7 @@ const CAMP=[
   src:'Wikipedia: 307th Rifle Division (Soviet Union) · Elefant',
   win:'Ponyri ist gehalten. Der Nordangriff auf Kursk kam nicht durch.',
   radio:{1:'Infanterie greift den Bahnhof an.',3:'Panzer vor dem Bahndamm.',6:'Schwere Panzer gemeldet.',10:'Ferdinand rollen auf den Bahnhof zu.'},
-  waves:10,top:18,maxTier:3,money:850,mod:{mtank:1.3,htank:1.2},weather:[['clear',.8],['rain',.2]],
+  waves:10,top:22,maxTier:3,money:850,mod:{mtank:1.3,htank:1.2},weather:[['clear',.8],['rain',.2]],
   map:{seed:404,g1:'#7d7a50',road:'#5d4c37',cols:11,rows:19,
    labels:[[2,2.6,'Höhe 253,5',0,.65],[8.9,10.4,'Bahnhof Ponyri',0,.6],[2.2,11.3,'Ponyri',0,.75]],
    areas:[['h',1,2,3,4],['e',7,0,7,18],['b',8,8,9,9],['b',1,12,1,12],['b',3,12,3,12],['b',2,14,2,14],['b',0,16,1,16],['g',8,13,10,16],['g',0,7,2,9],['f',10,0,10,3],['f',0,18,2,18]],
@@ -4488,7 +4488,7 @@ const CAMP=[
   src:'Wikipedia: Battle of the Seelow Heights',
   win:'Die Höhen sind gehalten, im Spiel. Historisch endete der Krieg in Europa drei Wochen später.',
   radio:{1:'Trommelfeuer auf die vordere Linie. Scheinwerfer im Staub.',4:'Feind kommt durch die Niederung.',7:'Schwere Panzer gemeldet.',10:'Letzter Ansturm auf die Höhen.'},
-  waves:10,top:20,maxTier:3,money:900,mod:{mtank:1.3,htank:1.3,attack:1.2},weather:[['fog',.35],['clear',.65]],
+  waves:10,top:24,maxTier:3,money:900,mod:{mtank:1.3,htank:1.3,attack:1.2},weather:[['fog',.35],['clear',.65]],
   map:{seed:505,g1:'#77774f',road:'#5d4c37',cols:11,rows:19,
    labels:[[5.5,1.3,'Oder',0,.9],[1.4,5.3,'Oderbruch',0,.6],[8.6,11.2,'Seelower Höhen',0,.6],[2.1,14.2,'Seelow',0,.75]],
    areas:[['w',0,1,10,1],['m',0,4,2,6],['m',8,3,10,5],['m',4,6,5,6],['m',9,7,10,7],['h',0,10,3,12],['h',7,10,10,12],['b',1,15,2,15],['b',8,15,9,15],['b',3,17,3,17],['b',7,17,7,18],['f',0,18,1,18],['f',9,17,10,18],['R',6,13,6,13]],
@@ -4528,7 +4528,7 @@ const BIGMAPS={
   areas:[['w',0,2,14,2],['m',0,5,2,8],['m',11,4,14,7],['m',6,9,7,10],['m',12,10,14,11],['m',0,11,1,12],['h',0,15,3,17],['h',11,15,14,17],['h',6,15,7,16],['b',1,20,2,20],['b',12,20,13,20],['b',4,23,4,23],['b',10,22,10,23],['b',1,23,1,23],['f',0,25,2,25],['f',12,24,14,25],['R',8,21,8,21]],
   routes:[[[4,-1],[4,12],[5,12],[5,19],[7,19],[7,26]],[[10,-1],[10,12],[9,12],[9,19],[7,19],[7,26]]],fords:[]}};
 for(const m of CAMP)if(BIGMAPS[m.id])m.map=BIGMAPS[m.id];
-const WM={m_brest:1.0,m_dubos:0.85,m_stz:0.6,m_ponyri:0.85,m_seelow:0.6};
+const WM={m_brest:1.4,m_dubos:1.3,m_stz:1.0,m_ponyri:1.35,m_seelow:1.0};
 for(const m of CAMP){MAPS[m.id]=m.map;if(!m.map.big)scaleMap(m.map,1.2);prepMap(m.map);for(const k of m.map.set){const[x,y]=k.split(',').map(Number);if('bhfRm'.includes(m.map.terr[y][x]))m.map.terr[y][x]='.'}
   SCEN[m.id]={camp:1,waveMul:WM[m.id]||1,rew:1.3/Math.sqrt(WM[m.id]||1),title:m.title,year:m.date,sides:[m.side,m.side==='su'?'de':'su'],blurb:m.story,money:m.money,waves:m.waves,top:m.top,maxTier:m.maxTier,allow:m.allow||null,mod:m.mod||{},weather:m.weather,radio:m.radio}}
 const CKEY='frontlinie-camp-v1';
@@ -4853,6 +4853,7 @@ const _hit87=hit;hit=function(e,dmg,pen){
   if(!e.D.veh&&!e.air&&e.holdT>0&&e.deep&&SRC&&SRC.k==='bullet'&&(SRC.cal||8)<15){e.fireT=2.5;if(Math.random()<.35)part('dust',e.x+(Math.random()-.5)*.25,e.y+(Math.random()-.5)*.25,.05,{col:e.dugIn==='R'?'#8a8278':'#7d6e55'});return}
   if(!e.D.veh&&!e.air){let f=holeCover(e)*(e.holdT>0?.7:1);if(SRC&&SRC.k==='bullet'){const c=TERR[terrAt(Math.floor(e.x),Math.floor(e.y))];f*=(c&&c.cover)||1;if(e.prone>0)f*=.7}dmg*=f;if(SRC&&SRC.k==='bullet')e.fireT=2.5}
   else if(e.D.tank&&e.halt>0&&SRC&&SRC.k==='bullet'){const c=terrAt(Math.floor(e.x),Math.floor(e.y));if(c==='h'||c==='f')dmg*=.75}
+  if(!e.D.veh&&!e.air&&e.holdT>0&&e.deep&&SRC&&(SRC.k==='blast'||SRC.k==='shr')&&SRC.x!=null&&Math.hypot(SRC.x-e.x,SRC.y-e.y)>.3)dmg*=.4;
   const h0=e.hp;_hit87(e,dmg,pen);
   // Panzer nebeln sich ein, sobald die Panzerabwehr sie trifft (einmal)
   if(e.D.tank&&!e.dead&&!e.smoked&&CUR&&(CUR.type==='pak'||CUR.type==='flakh')){e.smoked=1;const ax=Math.cos(e.ang),ay=Math.sin(e.ang);
