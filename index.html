@@ -1265,7 +1265,7 @@ function update(dt){
       const dist=Math.hypot(e.x-t.cx,e.y-t.cy);if(dist>s.range||dist<s.min)continue;
       if(d.kind==='arc'&&!canSee(t,e))continue;
       const prog=e.fixed?.5:e.air?e.d/e.len:e.d/G.M.paths[e.pi].len;
-      const p=(t.prio==='strong'?e.hp:t.prio==='near'?-dist:t.prio==='tank'?(e.arm*10+(e.D.tank?50:0)+prog):prog)+(t.zones&&t.zones.length?zoneBonus(t,e):0)-(d.kind!=='arc'&&immuneTo(e,s.pen)?1e6:0);
+      const p=(t.prio==='strong'?e.hp:t.prio==='near'?-dist:t.prio==='tank'?(e.arm*10+(e.D.tank?50:0)+prog):prog)+(t.zones&&t.zones.length?zoneBonus(t,e):0)-(d.kind!=='arc'&&(mmOf(G.side,t.type,t.lvl)||8)<30&&immuneTo(e,s.pen)?1e6:0);
       if(p>bp){bp=p;best=e}
     }
     if(best){
@@ -1380,7 +1380,7 @@ function fire(t,d,s,e){
   if(d.kind==='direct'){
     const m=e.air?s.air:s.ground;
     const nb=t.nb||1;SRC={k:'bullet',x:bx,y:by,cal,ap:!!ATAMMO[t.ammo]};CUR=t;
-    if(!e.air&&e.D.veh){const pm=penMul(s.pen,armAt(e));if(pm===0){if(t.bncId!==e.id){t.bncId=e.id;t.bnc=0}if(++t.bnc>=3){(t.ign||(t.ign={}))[e.id]=G.t+1e9;t.bnc=0;floatText(t.cx,t.cy-.35,'Feuer eingestellt','#a9a59a')}}if(pm<1){for(let i=0;i<2;i++)part('spark',e.x,e.y,.2);sfx('ping',e.x);if(G.t-e.ricT>.8){e.ricT=G.t;floatText(e.x,e.y-.25,pm<.5?'Abpraller':'Teildurchschlag',pm<.5?'#a9a59a':'#e8c75a')}}
+    if(!e.air&&e.D.veh){const pm=penMul(s.pen,armAt(e));if(pm===0&&(mmOf(G.side,t.type,t.lvl)||8)<30){if(t.bncId!==e.id){t.bncId=e.id;t.bnc=0}if(++t.bnc>=3){(t.ign||(t.ign={}))[e.id]=G.t+1e9;t.bnc=0;floatText(t.cx,t.cy-.35,'Feuer eingestellt','#a9a59a')}}if(pm<1){for(let i=0;i<2;i++)part('spark',e.x,e.y,.2);sfx('ping',e.x);if(G.t-e.ricT>.8){e.ricT=G.t;floatText(e.x,e.y-.25,pm<.5?'Abpraller':'Teildurchschlag',pm<.5?'#a9a59a':'#e8c75a')}}
       else if(s.track&&Math.random()<.25&&!e.stunT){e.stunT=2;floatText(e.x,e.y-.25,'Kettentreffer','#ffb07a')}}
     if(s.supp&&!e.D.veh&&!e.air)e.supT=1.5;
     hit(e,s.dmg*m/nb,s.pen);SRC=null;
