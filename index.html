@@ -4212,7 +4212,7 @@ function offerCards(){if(DEV||G.over)return;const pool=CARDS.slice().sort(()=>Ma
 
 // ---------- Funkmeldungen ----------
 let RQ=[],rT=0,sectorAcc=0;
-function radio(msg){if(!G||!G.live)return;RQ.push(msg);if(RQ.length>4)RQ.shift()}
+function radio(msg){if(!G||!G.live)return;RQ.push(msg);if(RQ.length>7)RQ.shift()}
 function radioTick(dt){const el=$('#radio');if(!el)return;rT-=dt;if(rT<=0){if(RQ.length){const m=RQ.shift();el.textContent=m;el.hidden=false;rT=Math.max(4.5,m.length/16)}else{el.hidden=true;rT=0}}}
 
 // ---------- Abschnittsleiste ----------
@@ -4283,12 +4283,8 @@ const _renderTray=renderTray;renderTray=function(){
       body=`<div class="info"><div class="iname" style="color:${b.col}">Batterie ${b.id} <span class="lbl">${b.t.length} Geschütz${b.t.length>1?'e':''}</span></div>
         <div class="adesc">${Object.entries(names).map(([n,k])=>k+'× '+n).join(', ')}.${G.cutT>0&&G.cutBat===b.id?' <b>Leitung gestört</b>: nur Eigensicht.':''}</div>
         ${am.length>1?`<div class="seg"><span class="lbl">Munition</span>${am.map(a=>`<button data-bam="${a}" class="${cur===a?'on':''}">${AM[a].n}</button>`).join('')}</div>`:''}
-        <div class="adesc">Feuerräume: ${b.zones.length}/3${b.zones.some(z=>z.reg)?' · vorbereitet (fast keine Streuung)':''}. Ziele darin werden zuerst bekämpft, in der Reihenfolge des Setzens.</div>
-        <div class="acts"><button class="up" data-zset="${b.id}">${G.zoneSet===b.id?'Ort antippen …':'Feuerraum setzen'}</button>${b.zones.length?`<button data-zdel="${b.id}">Räume löschen</button>`:''}</div>
-        <div class="acts"><button class="up" data-tot="${b.id}" ${G.state==='wave'&&ready&&b.t.length>1?'':'disabled'}>Feuerüberfall${ready?'':' · '+Math.ceil(cdm)+' s'}</button>
-        <button data-prep="${b.id}" ${G.state==='build'?'':'disabled'} class="${G.prep&&G.prep.has(b.id)?'on':''}">Gegenvorbereitung${G.prep&&G.prep.has(b.id)?' ✓':''}</button></div>
-        <div class="adesc">Feuerüberfall: alle Rohre schlagen gleichzeitig ein, +30 % Wirkung, 45 s Pause. Gegenvorbereitung: Die nächste Welle startet ${(G.wave+1)%5===0?15:10} % schwächer, die Batterie ist dafür die ersten 20 s beschäftigt.</div></div>`}
-    tray.innerHTML=`<div class="sh-head">${b?`<button class="back" data-act="fcback">‹ Batterien</button>`:''}<div class="grow"><span class="lbl">Feuerleitung</span><span class="hint">${G.zoneSet?'Mitte des Feuerraums antippen':b?'Befehle und Feuerräume':BATS.length+' Batterie'+(BATS.length===1?'':'n')}</span></div><button class="tog" data-act="fcoff" aria-label="Feuerleitung schließen">✕</button></div>`+(G.trayOpen?`<div class="sh-body">${body}</div>`:'');
+        <div class="adesc">Die Batterie bekämpft, was ihre Beobachter oder sie selbst sehen.</div></div>`}
+    tray.innerHTML=`<div class="sh-head">${b?`<button class="back" data-act="fcback">‹ Batterien</button>`:''}<div class="grow"><span class="lbl">Feuerleitung</span><span class="hint">${G.zoneSet?'Mitte des Feuerraums antippen':b?'Munition':BATS.length+' Batterie'+(BATS.length===1?'':'n')}</span></div><button class="tog" data-act="fcoff" aria-label="Feuerleitung schließen">✕</button></div>`+(G.trayOpen?`<div class="sh-body">${body}</div>`:'');
     updateInsets();return}
   _renderTray()};
 $('#tray').addEventListener('click',ev=>{if(!G)return;const b=ev.target.closest('button');if(!b)return;
@@ -4425,7 +4421,7 @@ const _ghostInfo=ghostInfo;ghostInfo=function(){let s=_ghostInfo();const g=G.gho
   sec.addEventListener('click',ev=>{const b=ev.target.closest('button');if(b&&G&&G.M)laneFocus(+b.dataset.lane)});
   const rd=document.createElement('div');rd.id='radio';rd.hidden=true;$('#app').appendChild(rd);
   const fb=document.createElement('button');fb.className='rbtn';fb.id='bFc';fb.setAttribute('aria-label','Feuerleitung');fb.title='Feuerleitung (B)';fb.innerHTML='Feuer-<br>leitung';$('#bStrike').before(fb);fb.addEventListener('click',()=>toggleFc());
-  const how=$('.how');if(how)how.insertAdjacentHTML('beforeend','<li><b>Feuerleitung:</b> Artillerie trifft nur, was gesehen wird. B-Stellen sehen weit, Taste rechts oder B zeigt Batterien, Feuerräume und toten Raum.</li><li><b>Mac:</b> Leertaste pausiert, 1–3 springt zu den Achsen.</li>');
+  const how=$('.how');if(how)how.insertAdjacentHTML('beforeend','<li><b>Feuerleitung:</b> Artillerie trifft nur, was gesehen wird. B-Stellen sehen weit, Taste rechts oder B zeigt Batterien und toten Raum.</li><li><b>Mac:</b> Leertaste pausiert, 1–3 springt zu den Achsen.</li>');
   const ro=new ResizeObserver(()=>{const t=$('#tray');if(t)document.documentElement.style.setProperty('--trayH',t.getBoundingClientRect().height+'px')});ro.observe($('#tray'))})();
 /* ===================== v80: Feldzug (kleine Hochformat-Karten mit Story) und iPhone-Oberfläche ===================== */
 // ---------- Missionen ----------
@@ -5330,10 +5326,45 @@ const _mw113=makeWave;makeWave=function(n){let L=_mw113(n);if(!G)return L;G.wkin
 // Schwerpunkt: ab Welle 4 verlagert der Angriff manchmal das Gewicht auf die schwächer verteidigte Achse, mit Funkmeldung
 const _pn113=prepNext;prepNext=function(){_pn113();if(!G||!G.next||!G.nextLanes)return;const w=G.wave+1,kind=G.wkind&&G.wkind[w];
   if(kind&&WKN[kind])radio('Aufklärung: Der nächste Angriff ist ein '+WKN[kind]+'.');
-  const lanes=[...new Set(G.nextLanes.filter(l=>l!=null))];if(w<4||lanes.length<2||kind==='ruhe'||Math.random()<.5)return;
+  const lanes=[...new Set(G.nextLanes.filter(l=>l!=null))];if(SCEN[G.scen].dir||w<4||lanes.length<2||kind==='ruhe'||Math.random()<.5)return;
   const str=l=>{const P=G.M.paths[l];let s=0;for(const t of G.towers){if(TD[t.type].obstacle)continue;let m=1e9;for(const p of P.pts){const d=Math.hypot(p.x-t.cx,p.y-t.cy);if(d<m)m=d}if(m<4.5)s+=t.spent||TD[t.type].cost}return s/Math.max(8,P.len)};
   let f=lanes[0],fs=1e18;for(const l of lanes){const s=str(l);if(s<fs){fs=s;f=l}}
   G.nextLanes=G.nextLanes.map(l=>l!=null&&Math.random()<.55?f:l);radio('Funk: Der Feind verlagert den Schwerpunkt auf '+laneName(f)+'.')};
+
+/* ===== v114: Feuerleitung vereinfacht, Versuchsmission mit Gefechtsführung des Gegners ===== */
+SCEN.x_demjansk={...SCEN.a_demjansk,dir:1,waves:10,waveMul:1,rew:1,money:700,gapMul:.7,maps:{de:'a_demjansk',su:'a_demjansk'},title:'Kessel von Demjansk · neue Gefechtsführung',blurb:'Versuch: zehn Wellen, wenige Gegnertypen mit klarer Aufgabe, ein Gegner mit Plan.'};
+MAPS.x_demjansk=MAPS.a_demjansk;
+const DIRB=[0,120,190,300,430,520,560,880,1120,1370,1950],DPT=k=>k==='inf'?9:ED[k].pts;
+const DIRT={1:{inf:.8,car:.2},2:{inf:.55,recon:.15,apc:.3},3:{inf:.45,pio:.2,ltank:.35},4:{inf:.4,fighter:.25,ltank:.35},5:{inf:.35,mtank:.35,sturm:.3},7:{inf:.3,ptank:.3,attack:.2,pio:.2},9:{inf:.25,htank:.35,sturm:.2,bomber:.2},10:{inf:.25,htank:.3,mtank:.25,attack:.2}};
+const DIRC={pz:{n:'Panzerstoß',w:'Der Feind hält eure Panzerabwehr für schwach.',m:{mtank:.4,htank:.2,inf:.25,sturm:.15}},luft:{n:'Luftschlag',w:'Der Feind hält eure Flak für schwach.',m:{attack:.3,bomber:.2,inf:.3,ltank:.2}},inf:{n:'Infanteriesturm',w:'Der Feind hält eure Infanterieabwehr für schwach.',m:{inf:.45,apc:.25,pio:.1,sturm:.2}}};
+const DINTRO={pio:'Pioniere sprengen Sperren und graben sich ein',apc:'Lastwagen setzen Schützen weit vorn ab',ltank:'leichte Panzer, verwundbar durch Pak und schwere MG von der Seite',fighter:'Jäger greifen Stellungen im Tiefflug an, Flak nötig',mtank:'mittlere Panzer, Pak in die Flanke stellen',sturm:'Sturmgeschütze schießen Stellungen zusammen',ptank:'schwer gepanzerte Durchbruchspanzer',attack:'Schlachtflieger jagen eure Geschütze',htank:'schwere Panzer, frontal kaum zu durchschlagen',bomber:'Bomber treffen ganze Stellungsgruppen'};
+function dirStr(l){const P=G.M.paths[l];let s=0;for(const t of G.towers){if(TD[t.type].obstacle)continue;let m=1e9;for(const p of P.pts){const d=Math.hypot(p.x-t.cx,p.y-t.cy);if(d<m)m=d}if(m<4.5)s+=t.spent||TD[t.type].cost}return s/Math.max(8,P.len)}
+function dirWave(n){const D=G.dir||(G.dir={ech:{},plan:{},seen:{}});let mix=DIRT[n],plan=null;
+  if(!mix){const p={at:0,aa:0,ai:0};for(const t of G.towers){const v=t.spent||TD[t.type].cost,ty=t.type;if(ty==='pak'||ty==='flakh')p.at+=v;if(ty==='flakl'||ty==='flakh')p.aa+=v;if(['mg','hmg','inf','mor','flakl'].includes(ty))p.ai+=v;if(['lfh','sfh','ssfh','rak'].includes(ty)){p.ai+=v*.5;p.at+=v*.3}}
+    const tot=p.at+p.aa+p.ai||1,sh={pz:p.at/tot/.38,luft:p.aa/tot/.22,inf:p.ai/tot/.4},k=Object.keys(sh).filter(k=>k!==D.lastPlan).sort((a,b)=>sh[a]-sh[b])[0];D.lastPlan=k;plan=DIRC[k];mix=plan.m}
+  const B=DIRB[Math.min(10,n)],L1=[],L2=[],air=[];
+  D.infX=D.infX||{};for(const k in mix){if(!ED[k])continue;let c=Math.max(1,Math.round(B*mix[k]/DPT(k)));if(k==='inf'&&c>34){D.infX[n]=c/34;c=34}if(k==='pio'&&c>10)c=10;for(let i=0;i<c;i++){if(ED[k].air)air.push(k);else if(k==='recon'||k==='car'||(!ED[k].tank&&Math.random()<.45))L1.push(k);else L2.push(k)}}
+  L2.sort((a,b)=>(ED[a].tank?1:0)-(ED[b].tank?1:0));if(n>=10)L2.push('boss');
+  const h=Math.floor(air.length/2);D.ech[n]=L1.length;D.plan[n]=plan;return[...L1,...air.slice(0,h),...L2,...air.slice(h)]}
+const _mw114=makeWave;makeWave=function(n){return G&&SCEN[G.scen].dir?dirWave(n):_mw114(n)};
+const _sp114=spawn;spawn=function(k,d0,pi){const e=_sp114(k,d0,pi);if(e&&G&&SCEN[G.scen].dir&&!e.fixed){const x=k==='inf'?1.8*((G.dir&&G.dir.infX&&G.dir.infX[G.wave])||1):ED[k].air?1.15:1.25;e.hp*=x;e.max*=x;e.D={...e.D,rew:e.D.rew*x}}return e};
+const _pn114=prepNext;prepNext=function(){_pn114();if(!G||!SCEN[G.scen].dir||!G.next)return;const D=G.dir,w=G.wave+1,np=G.M.paths.length,msg=[];
+  let main=0,ms=1e18;for(let l=0;l<np;l++){const s=dirStr(l)+Math.random()*.01;if(s<ms){ms=s;main=l}}const feint=np>1?(main+1+Math.floor(Math.random()*(np-1)))%np:main;
+  const ech=D.ech[w]||0;let gi=0;G.nextLanes=G.next.map(k=>{if(ED[k].air)return null;const first=gi<ech;gi++;return w<=2?main:first?(Math.random()<.6?feint:main):(Math.random()<.85?main:feint)});D.main=main;D.feint=feint;
+  const nw=[...new Set(G.next)].filter(k=>DINTRO[k]&&!D.seen[k]);for(const k of nw){D.seen[k]=1;msg.push('Neu: '+UNAMES[G.enemy][k]+'. '+DINTRO[k].charAt(0).toUpperCase()+DINTRO[k].slice(1)+'.')}
+  const pl=D.plan[w];if(pl)msg.push('Aufklärung: '+pl.w+' Er bereitet einen '+pl.n+' vor.');
+  if(w>2&&np>1)msg.push(Math.random()<.65?'Aufklärung: Hauptstoß über '+laneName(main)+', Scheinangriff über '+laneName(feint)+'.':'Aufklärung: Der Schwerpunkt des Angriffs ist unklar.');
+  for(const m of msg)radio(m)};
+function dirTick(dt){const D=G.dir;if(!D)return;
+  if(G.state==='wave'&&D.totW!==G.wave){D.totW=G.wave;D.tot=G.q.length;D.echDone=0;const n=G.wave;
+    if(n>=3){const P=G.M.paths[D.main||0];const c=G.towers.filter(t=>!TD[t.type].obstacle&&P.pts.some(p=>Math.hypot(p.x-t.cx,p.y-t.cy)<5)).sort((a,b)=>(b.spent||0)-(a.spent||0)).slice(0,n>=7?4:3);
+      if(c.length){radio('Feindliche Artillerie schießt sich auf '+laneName(D.main||0)+' ein!');G.qt=Math.max(G.qt,7);
+        for(const t of c)for(let i=0;i<3;i++)later(1+Math.random()*5.5,()=>{if(!G.towers.includes(t))return;const x=t.cx+(Math.random()-.5)*.9,y=t.cy+(Math.random()-.5)*.9;impact(x,y,122,'he');G.shake=Math.max(G.shake||0,.05);damageTower(t,t.max*(.1+.012*n))})}}}
+  if(G.state==='wave'&&!D.echDone&&D.ech[G.wave]>0&&D.tot-G.q.length>=D.ech[G.wave]&&G.q.length){D.echDone=1;G.qt+=11;radio('Die zweite Staffel formiert sich.')}
+  if(G.state==='build'&&D.paidW!==G.wave&&G.wave>0){D.paidW=G.wave;G.money+=60+G.wave*25}}
+const _up114=update;update=function(dt){if(G){for(const b of BATS)if(b.zones&&b.zones.length)b.zones.length=0;if(G.prep&&G.prep.size)G.prep.clear();G.prepMul=1;G.zoneSet=null}_up114(dt);if(G&&!G.over&&SCEN[G.scen].dir)dirTick(dt)};
+const _bs114=buildStart;buildStart=function(){_bs114();const L=document.querySelector('#scenList section.camp2 .mlist');if(!L||L.querySelector('.xdem'))return;const b=document.createElement('button');b.className='mis next xdem';
+  b.innerHTML='<span class="mn">★</span><span class="mt"><b>Demjansk · neue Gefechtsführung</b><small>Versuch · 10 Wellen · Wehrmacht</small></span><span class="ms">neu</span>';b.addEventListener('click',()=>{newGame('x_demjansk','de');radio('Versuch: zehn Wellen, der Gegner führt mit Plan. Achtet auf die Meldungen der Aufklärung.')});L.appendChild(b)};
 
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
 
