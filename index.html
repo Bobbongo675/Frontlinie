@@ -1381,7 +1381,7 @@ function fire(t,d,s,e){
   if(d.kind==='direct'){
     const m=e.air?s.air:s.ground;
     const nb=t.nb||1;SRC={k:'bullet',x:bx,y:by,cal,ap:!!ATAMMO[t.ammo]};CUR=t;
-    if(!e.air&&e.D.veh){const pm=penMul(s.pen,armAt(e));if(pm===0&&(mmOf(G.side,t.type,t.lvl)||8)<30){if(t.bncId!==e.id){t.bncId=e.id;t.bnc=0}if(++t.bnc>=3){(t.ign||(t.ign={}))[e.id]=G.t+4;t.bnc=0;floatText(t.cx,t.cy-.35,'Feuer eingestellt','#a9a59a')}}if(pm<1){for(let i=0;i<2;i++)part('spark',e.x,e.y,.2);sfx('ping',e.x);if(G.t-e.ricT>.8){e.ricT=G.t;floatText(e.x,e.y-.25,pm<.5?'Abpraller':'Teildurchschlag',pm<.5?'#a9a59a':'#e8c75a')}}
+    if(!e.air&&e.D.veh){const pm=penMul(s.pen,armAt(e));if(pm===0&&(mmOf(G.side,t.type,t.lvl)||8)<30){if(t.bncId!==e.id){t.bncId=e.id;t.bnc=0}if(++t.bnc>=3){(t.ign||(t.ign={}))[e.id]=G.t+4;t.bnc=0;floatText(t.cx,t.cy-.35,'Feuer eingestellt','#a9a59a')}}if(pm<1){for(let i=0;i<2;i++)part('spark',e.x,e.y,.2);sfx('ping',e.x);if(G.t-e.ricT>.8){e.ricT=G.t;floatText(e.x,e.y-.25,pm===0?'Abpraller':'Teildurchschlag',pm===0?'#a9a59a':'#e8c75a')}}
       else if(s.track&&Math.random()<.25&&!e.stunT){e.stunT=2;floatText(e.x,e.y-.25,'Kettentreffer','#ffb07a')}}
     if(s.supp&&!e.D.veh&&!e.air)e.supT=1.5;
     hit(e,s.dmg*m/nb,s.pen);SRC=null;
@@ -3189,7 +3189,7 @@ function draw(){
   const sx=G.shake?(Math.random()-.5)*G.shake*view.s*2:0,sy=G.shake?(Math.random()-.5)*G.shake*view.s*2:0;
   c.setTransform(dpr*view.s,0,0,dpr*view.s,dpr*(view.ox+sx),dpr*(view.oy+sy));
   c.imageSmoothingEnabled=true;
-  c.drawImage(ground(),0,0,COLS,ROWS);
+  drawUmland(c);c.drawImage(ground(),0,0,COLS,ROWS);
   const sc=scarCanvas();if(sc)c.drawImage(sc,0,0,COLS,ROWS);
   drawUnder(c);
   if(G.wrecks)for(const w of G.wrecks){if(w.plane){c.save();c.globalAlpha=w.fade?Math.max(0,1-w.fade/4):1;blit(c,planeWreckSprite(w),w.x,w.y,w.ang);c.restore()}else drawWreck(c,w)}
@@ -3270,7 +3270,7 @@ function draw(){
     if(G.sel.lvl<maxLvl(G.sel.type)){const n=stats(Object.assign({},G.sel,{lvl:G.sel.lvl+1}));if(n.range>s.range+.05&&n.range<500){c.strokeStyle='rgba(159,184,102,.8)';c.beginPath();c.arc(G.sel.cx,G.sel.cy,n.range,0,7);c.stroke()}}
     if(s.min){c.strokeStyle='rgba(214,93,66,.8)';c.beginPath();c.arc(G.sel.cx,G.sel.cy,s.min,0,7);c.stroke()}c.setLineDash([])}
   if(G.sel){c.strokeStyle='#e0a83e';c.lineWidth=.04;c.strokeRect(G.sel.x+.03,G.sel.y+.03,.94,.94)}
-  if(G.build&&G.ghost){const g=G.ghost,tt={type:G.build,x:g.x,y:g.y,cx:g.x+.5,cy:g.y+.5,lvl:1,ammo:TD[G.build].ammo?TD[G.build].ammo[0]:null,ang:-Math.PI/2,recoil:0};
+  if(G.build&&G.ghost){const g=G.ghost,tt={type:G.build,x:g.x,y:g.y,cx:g.x+.5,cy:g.y+.5,lvl:1,ammo:TD[G.build].ammo?TD[G.build].ammo[0]:null,ang:-Math.PI/2,recoil:0};drawFlank(c,tt);
     c.globalAlpha=.6;blit(c,spr('b-'+tt.type+G.side+1,1.1,1.1,k=>drawBase(k,tt.type,G.side,1)),tt.cx,tt.cy,0);if(!TD[tt.type].obstacle)blit(c,spr('g-'+tt.type+G.side+1,gunSize(tt.type),gunSize(tt.type),k=>drawGun(k,tt.type,G.side,1)),tt.cx,tt.cy,tt.ang);c.globalAlpha=1;
     c.strokeStyle='#e0a83e';c.lineWidth=.05;c.setLineDash([.1,.06]);c.strokeRect(g.x+.04,g.y+.04,.92,.92);
     if(!TD[tt.type].obstacle){const s=stats(tt);c.fillStyle='rgba(224,168,62,.08)';c.beginPath();c.arc(tt.cx,tt.cy,s.range,0,7);c.fill();c.lineWidth=.035;c.beginPath();c.arc(tt.cx,tt.cy,s.range,0,7);c.stroke();
@@ -3354,7 +3354,7 @@ function renderTray(){
   }else{
     title=SIDES[G.side].name+' · Bauen';
     if(G.aim)hint='Ziel für den Feuerschlag antippen';
-    else if(G.build&&G.ghost)hint='Nochmal tippen zum Bauen';
+    else if(G.build&&G.ghost)hint=(G.build==='pak'||G.build==='flakh'?'Weg grün: Treffer in Seite oder Heck. Rot: Front. ':'')+'Nochmal tippen zum Bauen';
     else if(G.build)hint=TD[G.build].obstacle?'Straßenfeld antippen':'Freies Feld antippen';
     else hint=G.bgrp?'Waffe wählen':'Gruppe wählen';
     if(G.bgrp&&!G.aim){const gr=BGRP.find(x=>x.id===G.bgrp);if(gr)title=gr.n}
@@ -4809,7 +4809,7 @@ armAt=function(e){if(!e.D.veh)return 0;const F=e.arm,S=e.armS!=null?e.armS:F,R=e
   const a=Math.atan2(SRC.y-e.y,SRC.x-e.x)-e.ang-(e.hullOff||0),cf=Math.cos(a);return cf>.5?F:cf<-.6?R:S};
 // Durchschlag gegen Panzerung: deutlich darüber = voll, knapp = Teildurchschlag, darunter = Abpraller (Sprenggranaten: nur Splitter)
 penMul=function(pen,arm){if(arm<=0)return 1;const r=pen/arm,B=SRC&&SRC.k==='bullet';
-  const he=SRC&&SRC.k==='blast'&&!SRC.ap?.5:1;if(r>=1.1)return he;if(r>=.9)return(B&&(SRC.cal||8)<15?.25:.5)*he;return B?0:.08};
+  const he=SRC&&SRC.k==='blast'&&!SRC.ap?.5:1;if(r>=1.1)return he;if(r>=.9)return(B&&(SRC.cal||8)<15?.25:.5)*he;return B?((SRC.cal||8)>=30&&r>=.75?.2:0):.08};
 // Feste Durchschläge der übrigen Quellen von Stufen auf mm umrechnen (Minen, Nebelwerfer-Direktschuss, Häuser)
 const ABS2MM=12;
 // Fahrzeuge beim Erscheinen: Panzerung in mm, Leben nach Typ, keine Zähigkeit mehr durch Wellenzahl
@@ -5280,6 +5280,60 @@ window.__mapCheck=mapCheck;{const b=mapCheck();if(b.length)console.error('Karten
 // Speichern, wenn die App in der Bauphase geschlossen wird
 const saveOnHide=()=>{try{if(G&&!G.over&&G.state==='build'&&G.wave>0)saveGame()}catch(e){}};
 addEventListener('pagehide',saveOnHide);document.addEventListener('visibilitychange',()=>{if(document.hidden)saveOnHide()});
+
+/* ===== v113: Zoom mit Umland, Wellentypen, Schwerpunkt, Flankenanzeige ===== */
+// Zoom: die ganze Karte darf sichtbar sein, außen liegt unbespieltes Umland
+zMin=function(){const vh=ch-INS.top-INS.bot;return Math.min(1,Math.min(cw/(COLS+1),vh/(ROWS+1))/base.s)};
+let umC=null,umKey='',UMX=26,UMY=12,UMP=24;
+function umland(){const M=G.M,sM=base.s*zMin(),ex=Math.min(70,Math.ceil(Math.max(0,(cw/sM-COLS)/2))+3),ey=Math.min(40,Math.ceil(Math.max(0,(ch/sM-ROWS)/2))+3),key=G.scen+'|'+G.side+'|'+COLS+'x'+ROWS+'|'+ex+'|'+ey;if(key===umKey&&umC)return umC;umKey=key;UMX=ex;UMY=ey;UMP=24;while(UMP>10&&(COLS+2*UMX)*(ROWS+2*UMY)*UMP*UMP>5e6)UMP-=2;
+  const k=document.createElement('canvas');k.width=(COLS+2*UMX)*UMP;k.height=(ROWS+2*UMY)*UMP;const c=k.getContext('2d');c.setTransform(UMP,0,0,UMP,UMX*UMP,UMY*UMP);
+  const snow=!!M.snow,g=rng((M.seed||7)+913);c.fillStyle=snow?'#c4c6bd':M.g1||'#6f6c49';c.fillRect(-UMX,-UMY,COLS+2*UMX,ROWS+2*UMY);
+  for(let i=0;i<260;i++){const x=-UMX+g()*(COLS+2*UMX),y=-UMY+g()*(ROWS+2*UMY);c.fillStyle=g()<.5?'rgba(0,0,0,.05)':'rgba(255,255,255,.05)';c.beginPath();c.ellipse(x,y,1+g()*2.5,.7+g()*1.6,g()*3,0,7);c.fill()}
+  // Wege, Flüsse und Bahn laufen ein Stück ins Umland weiter
+  const bands=[];const T=(x,y)=>M.terr[y]&&M.terr[y][x];
+  for(let y=0;y<ROWS;y++)for(const[x,dx]of[[0,-1],[COLS-1,1]]){const t=T(x,y);if(t==='w'||t==='e')bands.push([t,dx<0?-UMX:COLS,y,UMX,1])}
+  for(let x=0;x<COLS;x++)for(const[y,dy]of[[0,-1],[ROWS-1,1]]){const t=T(x,y);if(t==='w'||t==='e')bands.push([t,x,dy<0?-UMY:ROWS,1,UMY])}
+  for(const P of M.paths){const a=P.pts[0],b=P.pts[1]||a;const dx=Math.sign(Math.round(a.x-b.x)),dy=Math.sign(Math.round(a.y-b.y));const x0=Math.floor(a.x),y0=Math.floor(a.y);
+    if(dx)bands.push(['r',dx<0?-UMX:x0,y0,dx<0?x0+UMX+1:UMX+COLS-x0,1]);else if(dy)bands.push(['r',x0,dy<0?-UMY:y0,1,dy<0?y0+UMY+1:UMY+ROWS-y0])}
+  for(const[t,x,y,w,h]of bands){if(t==='w'){c.fillStyle=M.ice?'#dce6ea':'#3f6788';c.fillRect(x,y,w,h)}else if(t==='e'){c.fillStyle='#5a554c';if(w>h)c.fillRect(x,y+.3,w,.4);else c.fillRect(x+.3,y,.4,h)}else{c.fillStyle=M.road||'#6b6150';if(w>h)c.fillRect(x,y+.12,w,.76);else c.fillRect(x+.12,y,.76,h)}}
+  const onBand=(x,y)=>{for(const[t,bx,by,w,h]of bands)if(x>bx-.35&&x<bx+w+.35&&y>by-.35&&y<by+h+.35)return true;return false};
+  // dichter Wald, zum Kartenrand hin aufgelockert
+  const pal=snow?['#3d5544','#46604c','#34493b']:['#3c5a2c','#4a6a34','#2f4a24'],hi=snow?'#dfe4dd':'#62833f';
+  const clr=[];for(let i=0;i<Math.round((COLS+2*UMX)*(ROWS+2*UMY)/260);i++)clr.push([-UMX+g()*(COLS+2*UMX),-UMY+g()*(ROWS+2*UMY),2+g()*4,1.5+g()*3]);const inClear=(x,y)=>{for(const[cx,cy,rx,ry]of clr){const u=(x-cx)/rx,v=(y-cy)/ry;if(u*u+v*v<1)return true}return false};
+  for(let y=-UMY;y<ROWS+UMY;y+=.55)for(let x=-UMX;x<COLS+UMX;x+=.55){const px=x+(g()-.5)*.5,py=y+(g()-.5)*.5;
+    const dOut=Math.max(-px,px-COLS,-py,py-ROWS);if(dOut<.15)continue;if(g()>Math.min(1,.25+dOut/2.2))continue;if(onBand(px,py)||inClear(px,py))continue;
+    const r=.26+g()*.24;c.fillStyle='rgba(0,0,0,.22)';c.beginPath();c.arc(px+.08,py+.1,r,0,7);c.fill();c.fillStyle=pal[Math.floor(g()*3)];c.beginPath();c.arc(px,py,r,0,7);c.fill();
+    c.fillStyle=hi;c.globalAlpha=snow?.6:.5;c.beginPath();c.arc(px-r*.25,py-r*.28,r*(snow?.42:.45),0,7);c.fill();c.globalAlpha=1}
+  return umC=k}
+function drawUmland(c){if(!G||!G.M)return;const W=view.s*COLS,H=view.s*ROWS;if(view.ox<=0&&view.oy<=0&&view.ox+W>=cw&&view.oy+H>=ch)return;c.drawImage(umland(),-UMX,-UMY,COLS+2*UMX,ROWS+2*UMY)}
+// Flankenanzeige beim Platzieren von Pak und schwerer Flak: grün = Seite oder Heck, rot = Front
+function drawFlank(c,tt){if(tt.type!=='pak'&&tt.type!=='flakh')return;const s=stats(tt);
+  for(let pi=0;pi<G.M.paths.length;pi++){const P=G.M.paths[pi];for(let q=.25;q<P.len-.3;q+=.5){const a=pointAt(q,pi),dist=Math.hypot(a.x-tt.cx,a.y-tt.cy);if(dist>s.range)continue;
+    const b=pointAt(q+.2,pi),ang=Math.atan2(b.y-a.y,b.x-a.x),cf=Math.cos(Math.atan2(tt.cy-a.y,tt.cx-a.x)-ang);
+    c.fillStyle=cf>.5?'rgba(222,72,50,.85)':'rgba(96,210,96,.9)';c.beginPath();c.arc(a.x,a.y,.1,0,7);c.fill();c.strokeStyle='rgba(0,0,0,.45)';c.lineWidth=.025;c.stroke()}}}
+// Wellentypen: jede Welle hat einen Charakter, nach einem Großangriff folgt ein schwächerer Störangriff
+const WKN={ruhe:'Störangriff',inf:'Infanteriesturm',pz:'Panzerkeil',luft:'Luftschlag',gross:'Großangriff'};
+const _mw113=makeWave;makeWave=function(n){let L=_mw113(n);if(!G)return L;G.wkind=G.wkind||{};G.wkind[n]='mix';if(G.scen==='test'||n<3)return L;
+  const AL=SCEN[G.scen].allow,TOP=SCEN[G.scen].top||25,nn=Math.max(1,Math.round(n*TOP/MAXW));
+  const ok=k=>ED[k]&&(!AL||AL.includes(k))&&UNLOCK[k]<=nn&&((k!=='panther'&&k!=='goliath')||G.enemy==='de');
+  const isT=k=>!!ED[k].tank,isA=k=>!!ED[k].air;let kind;
+  if(n===MAXW||n%5===0)kind='gross';else if(n%5===1)kind='ruhe';else kind=['inf','pz','mix','luft'][(n*7+((G.M&&G.M.seed)||0))%4];
+  if(kind==='pz'&&!ok('ltank'))kind='inf';if(kind==='luft'&&(!ok('fighter')||n<5))kind='mix';
+  const swap=(pred,pool,frac)=>{let b=0;const keep=[];for(const k of L){if(pred(k)&&k!=='boss'&&Math.random()<frac)b+=ED[k].pts;else keep.push(k)}pool=pool.filter(ok);if(!pool.length)return;
+    const mn=Math.min(...pool.map(k=>ED[k].pts));let gd=0;while(b>=mn&&gd++<500){const cd=pool.filter(k=>ED[k].pts<=b),k=cd[Math.floor(Math.random()*cd.length)];keep.push(k);b-=ED[k].pts}
+    L=keep.sort(()=>Math.random()-.5)};
+  if(kind==='ruhe'){const P=L.reduce((s,k)=>s+ED[k].pts,0);let p=0;const o=[];for(const k of L){if(p+ED[k].pts<=P*.65){o.push(k);p+=ED[k].pts}}if(o.length)L=o}
+  else if(kind==='inf')swap(isT,['inf','inf','inf','pio','apc','car'],.6);
+  else if(kind==='pz')swap(k=>!ED[k].veh&&!isA(k)||k==='car'||k==='apc',['ltank','ptank','mtank','sturm','htank','panther'],.55);
+  else if(kind==='luft')swap(k=>!isA(k),['fighter','attack','bomber'],.15);
+  G.wkind[n]=kind;return L};
+// Schwerpunkt: ab Welle 4 verlagert der Angriff manchmal das Gewicht auf die schwächer verteidigte Achse, mit Funkmeldung
+const _pn113=prepNext;prepNext=function(){_pn113();if(!G||!G.next||!G.nextLanes)return;const w=G.wave+1,kind=G.wkind&&G.wkind[w];
+  if(kind&&WKN[kind])radio('Aufklärung: Der nächste Angriff ist ein '+WKN[kind]+'.');
+  const lanes=[...new Set(G.nextLanes.filter(l=>l!=null))];if(w<4||lanes.length<2||kind==='ruhe'||Math.random()<.5)return;
+  const str=l=>{const P=G.M.paths[l];let s=0;for(const t of G.towers){if(TD[t.type].obstacle)continue;let m=1e9;for(const p of P.pts){const d=Math.hypot(p.x-t.cx,p.y-t.cy);if(d<m)m=d}if(m<4.5)s+=t.spent||TD[t.type].cost}return s/Math.max(8,P.len)};
+  let f=lanes[0],fs=1e18;for(const l of lanes){const s=str(l);if(s<fs){fs=s;f=l}}
+  G.nextLanes=G.nextLanes.map(l=>l!=null&&Math.random()<.55?f:l);radio('Funk: Der Feind verlagert den Schwerpunkt auf '+laneName(f)+'.')};
 
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
 
