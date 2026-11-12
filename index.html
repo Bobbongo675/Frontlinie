@@ -5343,11 +5343,10 @@ function dirWave(n){const D=G.dir||(G.dir={ech:{},plan:{},seen:{}});let mix=DIRT
   if(!mix){const p={at:0,aa:0,ai:0};for(const t of G.towers){const v=t.spent||TD[t.type].cost,ty=t.type;if(ty==='pak'||ty==='flakh')p.at+=v;if(ty==='flakl'||ty==='flakh')p.aa+=v;if(['mg','hmg','inf','mor','flakl'].includes(ty))p.ai+=v;if(['lfh','sfh','ssfh','rak'].includes(ty)){p.ai+=v*.5;p.at+=v*.3}}
     const tot=p.at+p.aa+p.ai||1,sh={pz:p.at/tot/.38,luft:p.aa/tot/.22,inf:p.ai/tot/.4},k=Object.keys(sh).filter(k=>k!==D.lastPlan).sort((a,b)=>sh[a]-sh[b])[0];D.lastPlan=k;plan=DIRC[k];mix=plan.m}
   const B=DIRB[Math.min(10,n)],L1=[],L2=[],air=[];
-  D.infX=D.infX||{};for(const k in mix){if(!ED[k])continue;let c=Math.max(1,Math.round(B*mix[k]/DPT(k)));if(k==='inf'&&c>34){D.infX[n]=c/34;c=34}if(k==='pio'&&c>10)c=10;for(let i=0;i<c;i++){if(ED[k].air)air.push(k);else if(k==='recon'||k==='car'||(!ED[k].tank&&Math.random()<.45))L1.push(k);else L2.push(k)}}
+  D.infX=D.infX||{};for(const k in mix){if(!ED[k])continue;let c=Math.max(1,Math.round(B*mix[k]/DPT(k)));if(k==='inf'&&c>34)c=34;if(k==='pio'&&c>10)c=10;for(let i=0;i<c;i++){if(ED[k].air)air.push(k);else if(k==='recon'||k==='car'||(!ED[k].tank&&Math.random()<.45))L1.push(k);else L2.push(k)}}
   L2.sort((a,b)=>(ED[a].tank?1:0)-(ED[b].tank?1:0));if(n>=10)L2.push('boss');
   const h=Math.floor(air.length/2);D.ech[n]=L1.length;D.plan[n]=plan;return[...L1,...air.slice(0,h),...L2,...air.slice(h)]}
 const _mw114=makeWave;makeWave=function(n){return G&&SCEN[G.scen].dir?dirWave(n):_mw114(n)};
-const _sp114=spawn;spawn=function(k,d0,pi){const e=_sp114(k,d0,pi);if(e&&G&&SCEN[G.scen].dir&&!e.fixed){const x=k==='inf'?1.8*((G.dir&&G.dir.infX&&G.dir.infX[G.wave])||1):ED[k].air?1.15:1.25;e.hp*=x;e.max*=x;e.D={...e.D,rew:e.D.rew*x}}return e};
 const _pn114=prepNext;prepNext=function(){_pn114();if(!G||!SCEN[G.scen].dir||!G.next)return;const D=G.dir,w=G.wave+1,np=G.M.paths.length,msg=[];
   let main=0,ms=1e18;for(let l=0;l<np;l++){const s=dirStr(l)+Math.random()*.01;if(s<ms){ms=s;main=l}}const feint=np>1?(main+1+Math.floor(Math.random()*(np-1)))%np:main;
   const ech=D.ech[w]||0;let gi=0;G.nextLanes=G.next.map(k=>{if(ED[k].air)return null;const first=gi<ech;gi++;return w<=2?main:first?(Math.random()<.6?feint:main):(Math.random()<.85?main:feint)});D.main=main;D.feint=feint;
