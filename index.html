@@ -4852,7 +4852,7 @@ function inSmoke(e){for(const s of G.esmoke||[])if(Math.hypot(s.x-e.x,s.y-e.y)<s
 const _hit87=hit;hit=function(e,dmg,pen){
   // Volle Deckung: wer in einer Ruine, einem tiefen Trichter (ab 10,5 cm) oder einem Schützenloch liegt, ist gegen Gewehr- und MG-Feuer (unter 15 mm) geschützt
   if(!e.D.veh&&!e.air&&e.holdT>0&&e.deep&&SRC&&SRC.k==='bullet'&&(SRC.cal||8)<15){e.fireT=2.5;if(Math.random()<.35)part('dust',e.x+(Math.random()-.5)*.25,e.y+(Math.random()-.5)*.25,.05,{col:e.dugIn==='R'?'#8a8278':'#7d6e55'});return}
-  if(!e.D.veh&&!e.air){let f=holeCover(e)*(e.holdT>0?.7:1);if(SRC&&SRC.k==='bullet'){const c=TERR[terrAt(Math.floor(e.x),Math.floor(e.y))];f*=(c&&c.cover)||1;if(e.prone>0)f*=.7}dmg*=f;if(SRC&&SRC.k==='bullet')e.fireT=2.5}
+  if(!e.D.veh&&!e.air){let f=holeCover(e)*(e.holdT>0?.7:1);if(SRC&&SRC.k==='bullet'){const c=TERR[terrAt(Math.floor(e.x),Math.floor(e.y))];f*=(c&&c.cover)||1;if(e.prone>0)f*=e.holdT>0?.7:.93}dmg*=f;if(SRC&&SRC.k==='bullet')e.fireT=2.5}
   else if(e.D.tank&&e.halt>0&&SRC&&SRC.k==='bullet'){const c=terrAt(Math.floor(e.x),Math.floor(e.y));if(c==='h'||c==='f')dmg*=.75}
   if(!e.D.veh&&!e.air&&e.holdT>0&&e.deep&&SRC&&(SRC.k==='blast'||SRC.k==='shr')&&SRC.x!=null&&Math.hypot(SRC.x-e.x,SRC.y-e.y)>.3)dmg*=.4;
   const h0=e.hp;_hit87(e,dmg,pen);
