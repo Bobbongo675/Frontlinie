@@ -1265,7 +1265,6 @@ function update(dt){
       const dist=Math.hypot(e.x-t.cx,e.y-t.cy);if(dist>s.range||dist<s.min)continue;
       if(d.kind==='arc'&&!canSee(t,e))continue;
       if(d.kind!=='arc'&&!e.air&&dist>2.5&&inSmoke(e))continue;
-      if(d.kind!=='arc'&&!e.air&&!losOK(t,e.x,e.y))continue;
       const prog=e.fixed?.5:e.air?e.d/e.len:e.d/G.M.paths[e.pi].len;
       const p=(t.prio==='strong'?e.hp:t.prio==='near'?-dist:t.prio==='tank'?(e.arm*10+(e.D.tank?50:0)+prog):prog)+(t.zones&&t.zones.length?zoneBonus(t,e):0)-(d.kind!=='arc'&&noPen(t,s,e,dist)?1e6:0);
       if(p>bp){bp=p;best=e}
@@ -3355,7 +3354,7 @@ function renderTray(){
   }else{
     title=SIDES[G.side].name+' · Bauen';
     if(G.aim)hint='Ziel für den Feuerschlag antippen';
-    else if(G.build&&G.ghost)hint=(SCEN[G.scen].dir&&TD[G.build].kind!=='arc'&&!TD[G.build].obstacle?'Punkte: einsehbarer Weg. Dunkel: verdeckt. ':'')+(G.build==='pak'||G.build==='flakh'?'Grün: Treffer in Seite oder Heck. Rot: Front. ':'')+'Nochmal tippen zum Bauen';
+    else if(G.build&&G.ghost)hint=(G.build==='pak'||G.build==='flakh'?'Weg grün: Treffer in Seite oder Heck. Rot: Front. ':'')+'Nochmal tippen zum Bauen';
     else if(G.build)hint=TD[G.build].obstacle?'Straßenfeld antippen':'Freies Feld antippen';
     else hint=G.bgrp?'Waffe wählen':'Gruppe wählen';
     if(G.bgrp&&!G.aim){const gr=BGRP.find(x=>x.id===G.bgrp);if(gr)title=gr.n}
@@ -5304,7 +5303,7 @@ function umland(){const M=G.M,sM=base.s*zMin(),ex=Math.min(70,Math.ceil(Math.max
   return umC=k}
 function drawUmland(c){if(!G||!G.M)return;const W=view.s*COLS,H=view.s*ROWS;if(view.ox<=0&&view.oy<=0&&view.ox+W>=cw&&view.oy+H>=ch)return;c.drawImage(umland(),-UMX,-UMY,COLS+2*UMX,ROWS+2*UMY)}
 // Flankenanzeige beim Platzieren von Pak und schwerer Flak: grün = Seite oder Heck, rot = Front
-function drawFlankOld(c,tt){if(tt.type!=='pak'&&tt.type!=='flakh')return;const s=stats(tt);
+function drawFlank(c,tt){if(tt.type!=='pak'&&tt.type!=='flakh')return;const s=stats(tt);
   for(let pi=0;pi<G.M.paths.length;pi++){const P=G.M.paths[pi];for(let q=.25;q<P.len-.3;q+=.5){const a=pointAt(q,pi),dist=Math.hypot(a.x-tt.cx,a.y-tt.cy);if(dist>s.range)continue;
     const b=pointAt(q+.2,pi),ang=Math.atan2(b.y-a.y,b.x-a.x),cf=Math.cos(Math.atan2(tt.cy-a.y,tt.cx-a.x)-ang);
     c.fillStyle=cf>.5?'rgba(222,72,50,.85)':'rgba(96,210,96,.9)';c.beginPath();c.arc(a.x,a.y,.1,0,7);c.fill();c.strokeStyle='rgba(0,0,0,.45)';c.lineWidth=.025;c.stroke()}}}
@@ -5335,7 +5334,7 @@ const _pn113=prepNext;prepNext=function(){_pn113();if(!G||!G.next||!G.nextLanes)
 /* ===== v114: Feuerleitung vereinfacht, Versuchsmission mit Gefechtsführung des Gegners ===== */
 SCEN.x_demjansk={...SCEN.a_demjansk,dir:1,waves:10,waveMul:1,rew:1,money:700,gapMul:.7,maps:{de:'a_demjansk',su:'a_demjansk'},title:'Kessel von Demjansk · neue Gefechtsführung',blurb:'Versuch: zehn Wellen, wenige Gegnertypen mit klarer Aufgabe, ein Gegner mit Plan.'};
 MAPS.x_demjansk=MAPS.a_demjansk;
-const DIRB=[0,120,190,300,430,520,560,880,1120,1370,1950],DPT=k=>k==='inf'?6:ED[k].pts;
+const DIRB=[0,120,190,300,430,520,560,880,1120,1370,1950],DPT=k=>k==='inf'?9:ED[k].pts;
 const DIRT={1:{inf:.8,car:.2},2:{inf:.55,recon:.15,apc:.3},3:{inf:.45,pio:.2,ltank:.35},4:{inf:.4,fighter:.25,ltank:.35},5:{inf:.35,mtank:.35,sturm:.3},7:{inf:.3,ptank:.3,attack:.2,pio:.2},9:{inf:.25,htank:.35,sturm:.2,bomber:.2},10:{inf:.25,htank:.3,mtank:.25,attack:.2}};
 const DIRC={pz:{n:'Panzerstoß',w:'Der Feind hält eure Panzerabwehr für schwach.',m:{mtank:.4,htank:.2,inf:.25,sturm:.15}},luft:{n:'Luftschlag',w:'Der Feind hält eure Flak für schwach.',m:{attack:.3,bomber:.2,inf:.3,ltank:.2}},inf:{n:'Infanteriesturm',w:'Der Feind hält eure Infanterieabwehr für schwach.',m:{inf:.45,apc:.25,pio:.1,sturm:.2}}};
 const DINTRO={pio:'Pioniere sprengen Sperren und graben sich ein',apc:'Lastwagen setzen Schützen weit vorn ab',ltank:'leichte Panzer, verwundbar durch Pak und schwere MG von der Seite',fighter:'Jäger greifen Stellungen im Tiefflug an, Flak nötig',mtank:'mittlere Panzer, Pak in die Flanke stellen',sturm:'Sturmgeschütze schießen Stellungen zusammen',ptank:'schwer gepanzerte Durchbruchspanzer',attack:'Schlachtflieger jagen eure Geschütze',htank:'schwere Panzer, frontal kaum zu durchschlagen',bomber:'Bomber treffen ganze Stellungsgruppen'};
@@ -5344,10 +5343,11 @@ function dirWave(n){const D=G.dir||(G.dir={ech:{},plan:{},seen:{}});let mix=DIRT
   if(!mix){const p={at:0,aa:0,ai:0};for(const t of G.towers){const v=t.spent||TD[t.type].cost,ty=t.type;if(ty==='pak'||ty==='flakh')p.at+=v;if(ty==='flakl'||ty==='flakh')p.aa+=v;if(['mg','hmg','inf','mor','flakl'].includes(ty))p.ai+=v;if(['lfh','sfh','ssfh','rak'].includes(ty)){p.ai+=v*.5;p.at+=v*.3}}
     const tot=p.at+p.aa+p.ai||1,sh={pz:p.at/tot/.38,luft:p.aa/tot/.22,inf:p.ai/tot/.4},k=Object.keys(sh).filter(k=>k!==D.lastPlan).sort((a,b)=>sh[a]-sh[b])[0];D.lastPlan=k;plan=DIRC[k];mix=plan.m}
   const B=DIRB[Math.min(10,n)],L1=[],L2=[],air=[];
-  D.infX=D.infX||{};for(const k in mix){if(!ED[k])continue;let c=Math.max(1,Math.round(B*mix[k]/DPT(k)));if(k==='inf'&&c>44)c=44;if(k==='pio'&&c>10)c=10;for(let i=0;i<c;i++){if(ED[k].air)air.push(k);else if(k==='recon'||k==='car'||(!ED[k].tank&&Math.random()<.45))L1.push(k);else L2.push(k)}}
+  D.infX=D.infX||{};for(const k in mix){if(!ED[k])continue;let c=Math.max(1,Math.round(B*mix[k]/DPT(k)));if(k==='inf'&&c>34){D.infX[n]=c/34;c=34}if(k==='pio'&&c>10)c=10;for(let i=0;i<c;i++){if(ED[k].air)air.push(k);else if(k==='recon'||k==='car'||(!ED[k].tank&&Math.random()<.45))L1.push(k);else L2.push(k)}}
   L2.sort((a,b)=>(ED[a].tank?1:0)-(ED[b].tank?1:0));if(n>=10)L2.push('boss');
   const h=Math.floor(air.length/2);D.ech[n]=L1.length;D.plan[n]=plan;return[...L1,...air.slice(0,h),...L2,...air.slice(h)]}
 const _mw114=makeWave;makeWave=function(n){return G&&SCEN[G.scen].dir?dirWave(n):_mw114(n)};
+const _sp114=spawn;spawn=function(k,d0,pi){const e=_sp114(k,d0,pi);if(e&&G&&SCEN[G.scen].dir&&!e.fixed){const x=k==='inf'?1.8*((G.dir&&G.dir.infX&&G.dir.infX[G.wave])||1):ED[k].air?1.15:1.25;e.hp*=x;e.max*=x;e.D={...e.D,rew:e.D.rew*x}}return e};
 const _pn114=prepNext;prepNext=function(){_pn114();if(!G||!SCEN[G.scen].dir||!G.next)return;const D=G.dir,w=G.wave+1,np=G.M.paths.length,msg=[];
   let main=0,ms=1e18;for(let l=0;l<np;l++){const s=dirStr(l)+Math.random()*.01;if(s<ms){ms=s;main=l}}const feint=np>1?(main+1+Math.floor(Math.random()*(np-1)))%np:main;
   const ech=D.ech[w]||0;let gi=0;G.nextLanes=G.next.map(k=>{if(ED[k].air)return null;const first=gi<ech;gi++;return w<=2?main:first?(Math.random()<.6?feint:main):(Math.random()<.85?main:feint)});D.main=main;D.feint=feint;
@@ -5365,51 +5365,6 @@ function dirTick(dt){const D=G.dir;if(!D)return;
 const _up114=update;update=function(dt){if(G){for(const b of BATS)if(b.zones&&b.zones.length)b.zones.length=0;if(G.prep&&G.prep.size)G.prep.clear();G.prepMul=1;G.zoneSet=null}_up114(dt);if(G&&!G.over&&SCEN[G.scen].dir)dirTick(dt)};
 const _bs114=buildStart;buildStart=function(){_bs114();const L=document.querySelector('#scenList section.camp2 .mlist');if(!L||L.querySelector('.xdem'))return;const b=document.createElement('button');b.className='mis next xdem';
   b.innerHTML='<span class="mn">★</span><span class="mt"><b>Demjansk · neue Gefechtsführung</b><small>Versuch · 10 Wellen · Wehrmacht</small></span><span class="ms">neu</span>';b.addEventListener('click',()=>{newGame('x_demjansk','de');radio('Versuch: zehn Wellen, der Gegner führt mit Plan. Achtet auf die Meldungen der Aufklärung.')});L.appendChild(b)};
-
-/* ===== v116: Treffer statt Trefferpunkte, Sichtlinien, schwere Waffen des Gegners, Sturm, Begleitinfanterie ===== */
-const isInf=e=>!e.D.veh&&!e.air&&!e.fixed;
-// Infanterie: ein Treffer fällt oder geht daneben, keine Teilschäden mehr (alle Missionen, im Mittel gleiche Wirkung)
-const _hit116=hit;hit=function(e,dmg,pen){if(!e||e.dead||!isInf(e)||!(dmg>0))return _hit116(e,dmg,pen);
-  const h0=e.hp,g=GORE,rc=RPT.cur;GORE=false;RPT.cur=null;e.hp=h0+1e7;try{_hit116(e,dmg,pen)}finally{GORE=g;RPT.cur=rc}const d=h0+1e7-e.hp;e.hp=h0;if(e.dead||d<=0)return;
-  let p=Math.min(1,d/h0);if(G&&SCEN[G.scen].dir&&SRC&&SRC.k==='bullet'&&(e.prone>0||e.holdT>0))p*=.6;
-  if(Math.random()<p){_hit116(e,(h0*dmg/d)*1.05+1,pen);if(!e.dead)e.hp=h0}else if(SRC&&SRC.k==='bullet'&&Math.random()<.3)part('dust',e.x+(Math.random()-.5)*.4,e.y+(Math.random()-.5)*.4,.04,{col:G.M.snow?'#e4e6e0':'#8a7a5c'})};
-// Sichtlinien für Direktwaffen (Versuchsmission): Wald, Häuser, Ruinen und Höhen verdecken; von einer Höhe sieht man über Wald und Höhen
-function losOK(t,x,y){if(!G||!SCEN[G.scen].dir)return true;const T=G.M.terr,tx=Math.floor(t.cx),ty=Math.floor(t.cy),ex=Math.floor(x),ey=Math.floor(y),key=ex+ey*64,C=t._los||(t._los=new Map());let v=C.get(key);if(v!==undefined)return v;
-  const onH=T[ty]&&T[ty][tx]==='h',n=Math.ceil(Math.hypot(ex-tx,ey-ty)*2.5);v=true;
-  for(let i=1;i<n;i++){const px=Math.floor(t.cx+(ex+.5-t.cx)*i/n),py=Math.floor(t.cy+(ey+.5-t.cy)*i/n);if((px===tx&&py===ty)||(px===ex&&py===ey))continue;const k=T[py]&&T[py][px];if(k==='b'||k==='R'||((k==='f'||k==='h')&&!onH)){v=false;break}}
-  C.set(key,v);return v}
-function drawFlank(c,tt){const d=TD[tt.type];if(!d||d.obstacle||d.noFire||d.kind==='arc')return;const dir=G&&SCEN[G.scen].dir,at=tt.type==='pak'||tt.type==='flakh';if(!at&&!dir)return;const s=stats(tt);
-  for(let pi=0;pi<G.M.paths.length;pi++){const P=G.M.paths[pi];for(let q=.25;q<P.len-.3;q+=.5){const a=pointAt(q,pi),dist=Math.hypot(a.x-tt.cx,a.y-tt.cy);if(dist>s.range)continue;
-    if(dir&&!losOK(tt,a.x,a.y)){c.fillStyle='rgba(15,15,15,.6)';c.beginPath();c.arc(a.x,a.y,.06,0,7);c.fill();continue}
-    let col='rgba(255,238,160,.92)';if(at){const b=pointAt(q+.2,pi),ang=Math.atan2(b.y-a.y,b.x-a.x),cf=Math.cos(Math.atan2(tt.cy-a.y,tt.cx-a.x)-ang);col=cf>.5?'rgba(222,72,50,.85)':'rgba(96,210,96,.9)'}
-    c.fillStyle=col;c.beginPath();c.arc(a.x,a.y,.1,0,7);c.fill();c.strokeStyle='rgba(0,0,0,.45)';c.lineWidth=.025;c.stroke()}}}
-// Rollen: MG-Trupp und Granatwerfer halten Stellungen nieder, Sturmgruppen nehmen sie, Begleitinfanterie deckt Panzer
-let spN116=0;const _sp116=spawn;spawn=function(k,d0,pi){const e=_sp116(k,d0,pi);if(!e||!G||!SCEN[G.scen].dir||spN116)return e;const D=G.dir||(G.dir={ech:{},plan:{},seen:{}}),w=G.wave;if(D.rcW!==w){D.rcW=w;D.rc={mg:0,gw:0}}
-  if(k==='inf'){const r=Math.random();if(w>=3&&D.rc.mg<2+Math.floor(w/3)&&r<.12){e.role='mg';D.rc.mg++}else if(w>=5&&D.rc.gw<1+Math.floor(w/4)&&r<.2){e.role='gw';D.rc.gw++}else if(w>=4&&r<.45)e.role='st'}
-  else if(ED[k].tank&&k!=='boss'&&w>=5&&Math.random()<.65){for(let i=1;i<=4;i++)later(.55*i,()=>{if(e.dead||G.over)return;spN116=1;const s=_sp116('inf',0,e.pi);spN116=0;if(s){s.esc=e;s.role='st';s.D={...s.D,spd:e.D.spd*1.03}}})}
-  return e};
-function roleTick(dt){if(G.state!=='wave')return;const rnd=()=>Math.random()-.5,TW=G.towers.filter(t=>!TD[t.type].obstacle);
-  for(const e of G.enemies){if(e.dead||e.fixed||e.air)continue;
-    if(ED[e.k].tank){const esc=G.enemies.some(s=>s.esc===e&&!s.dead);for(const t of TW){const d=Math.hypot(t.cx-e.x,t.cy-e.y);if(esc){if(d<3&&!TD[t.type].noFire)t.supT=Math.max(t.supT||0,G.t+.8)}else if(t.type==='inf'&&d<1.4){e.hp-=e.max*.11*dt;if(Math.random()<dt*6)part('smoke',e.x+rnd()*.3,e.y+rnd()*.3,.1,{col:'#3a3632'});if(e.hp<=0){e.by=t;kill(e);break}}}continue}
-    if(e.D.veh)continue;
-    if(e.esc){if(e.esc.dead){e.esc=null;e.D={...e.D,spd:ED.inf.spd}}else if(e.pi===e.esc.pi&&e.d>e.esc.d-.3)e.d-=e.v*dt}
-    if(e.role==='mg'||e.role==='gw'){if(e.moveT>0){e.moveT-=dt;continue}const R=e.role==='mg'?4.2:6.5;let b=null,bd=R;for(const t of TW){if(TD[t.type].noFire)continue;const d=Math.hypot(t.cx-e.x,t.cy-e.y);if(d<bd){bd=d;b=t}}
-      if(b){e.d-=e.v*dt;e.prone=Math.max(e.prone||0,.6);e.setT=(e.setT||0)+dt;if(e.setT>22){e.setT=0;e.moveT=7}b.supT=Math.max(b.supT||0,G.t+1.5);e.rcd=(e.rcd||0)-dt;
-        if(e.rcd<=0){if(e.role==='mg'){e.rcd=.3;G.tracers.push({x1:e.x,y1:e.y,x2:b.cx+rnd()*.5,y2:b.cy+rnd()*.5,t:.07,w:.02});if(Math.random()<.5)damageTower(b,1.2)}
-          else{e.rcd=3.2;later(1.3,()=>{if(!G.towers.includes(b))return;impact(b.cx+rnd()*.8,b.cy+rnd()*.8,82,'he');damageTower(b,b.max*.035)})}}}continue}
-    if(e.role==='st'){let b=null;for(const t of TW){if(Math.hypot(t.cx-e.x,t.cy-e.y)<1.05){b=t;break}}
-      if(b){e.d-=e.v*dt;b.supT=Math.max(b.supT||0,G.t+1);e.asT=(e.asT||0)+dt;if(e.asT>2.2){e.asT=0;const guard=b.type==='inf'||G.towers.some(t=>t.type==='inf'&&Math.hypot(t.cx-b.cx,t.cy-b.cy)<1.7);
-        if(guard&&Math.random()<.6){e.by=b;kill(e)}else{G.fx.push({type:'flash',x:b.cx,y:b.cy,r:.3,t:0,T:.12});damageTower(b,b.max*.4)}}}}}
-  for(const t of G.towers)if(t.supT>G.t&&t.cd>0)t.cd+=dt*.7}
-const _up116=update;update=function(dt){_up116(dt);if(G&&!G.over&&SCEN[G.scen].dir)roleTick(dt)};
-const _dr116=draw;draw=function(){_dr116();if(!G||!SCEN[G.scen].dir)return;const c=ctx;c.save();c.setTransform(dpr*view.s,0,0,dpr*view.s,dpr*view.ox,dpr*view.oy);
-  for(const e of G.enemies){if(e.dead||(e.role!=='mg'&&e.role!=='gw'))continue;const col=e.role==='mg'?'#ffd84a':'#ff8a3c';c.strokeStyle=col;c.lineWidth=.035;c.beginPath();c.arc(e.x,e.y,.2,0,7);c.stroke();c.save();c.translate(e.x,e.y-.27);c.scale(.02,.02);c.font='bold 11px sans-serif';c.textAlign='center';c.lineWidth=3;c.strokeStyle='rgba(0,0,0,.7)';c.strokeText(e.role==='mg'?'MG':'GrW',0,0);c.fillStyle=col;c.fillText(e.role==='mg'?'MG':'GrW',0,0);c.restore()}
-  for(const t of G.towers)if(t.supT>G.t){c.strokeStyle='rgba(255,216,74,'+(.55+.35*Math.sin(G.t*10))+')';c.lineWidth=.05;c.setLineDash([.12,.1]);c.beginPath();c.arc(t.cx,t.cy,.46,0,7);c.stroke();c.setLineDash([])}
-  if(G.sel&&!G.build&&TD[G.sel.type])drawFlank(c,G.sel);c.restore()};
-const _pn116=prepNext;prepNext=function(){_pn116();if(!G||!SCEN[G.scen].dir)return;const w=G.wave+1;
-  if(w===3)radio('Neu: MG-Trupps, gelb markiert, halten eure Stellungen nieder. Mörser und Artillerie treffen sie in der Deckung.');
-  if(w===4)radio('Neu: Sturmgruppen nehmen Stellungen im Nahkampf. Eine Infanteriestellung daneben wehrt sie ab.');
-  if(w===5)radio('Neu: Granatwerfer, orange markiert, und Panzer mit Begleitinfanterie. Ohne Begleitung fallen Panzer euren Infanteriestellungen zum Opfer.')};
 
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
 
