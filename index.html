@@ -5358,7 +5358,7 @@ function dirTick(dt){const D=G.dir;if(!D)return;
   if(G.state==='wave'&&D.totW!==G.wave){D.totW=G.wave;D.tot=G.q.length;D.echDone=0;const n=G.wave;
     if(n>=3){const P=G.M.paths[D.main||0];const c=G.towers.filter(t=>!TD[t.type].obstacle&&P.pts.some(p=>Math.hypot(p.x-t.cx,p.y-t.cy)<5)).sort((a,b)=>(b.spent||0)-(a.spent||0)).slice(0,n>=7?4:3);
       if(c.length){radio('Feindliche Artillerie schießt sich auf '+laneName(D.main||0)+' ein!');G.qt=Math.max(G.qt,7);
-        for(const t of c)for(let i=0;i<3;i++)later(1+Math.random()*5.5,()=>{if(!G.towers.includes(t))return;const x=t.cx+(Math.random()-.5)*.9,y=t.cy+(Math.random()-.5)*.9;impact(x,y,122,'he');G.shake=Math.max(G.shake||0,.05);damageTower(t,t.max*(.1+.012*n))})}}}
+        for(const t of c)for(let i=0;i<3;i++){const dl=1.4+Math.random()*5.1;later(dl-1.2,()=>{if(G.towers.includes(t))whistle(1.2,.55,122,t.cx)});later(dl,()=>{if(!G.towers.includes(t))return;const x=t.cx+(Math.random()-.5)*.9,y=t.cy+(Math.random()-.5)*.9;impact(x,y,122,'he');impactSound(122,x,'he');addShake(.05);damageTower(t,t.max*(.1+.012*n))})}}}}
   if(G.state==='wave'&&!D.echDone&&D.ech[G.wave]>0&&D.tot-G.q.length>=D.ech[G.wave]&&G.q.length){D.echDone=1;G.qt+=11;radio('Die zweite Staffel formiert sich.')}
   if(G.state==='build'&&D.paidW!==G.wave&&G.wave>0){D.paidW=G.wave;G.money+=60+G.wave*25}}
 const _up114=update;update=function(dt){if(G){for(const b of BATS)if(b.zones&&b.zones.length)b.zones.length=0;if(G.prep&&G.prep.size)G.prep.clear();G.prepMul=1;G.zoneSet=null}_up114(dt);if(G&&!G.over&&SCEN[G.scen].dir)dirTick(dt)};
