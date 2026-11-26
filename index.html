@@ -4666,7 +4666,7 @@ const FORT=[null,
  {n:'Sandsäcke',d:'Ein Ring aus Sandsäcken.',hp:1.35,cov:.85,cost:.25},
  {n:'Eingegraben',d:'Erdwall mit Holzverstärkung, die Waffe steht tiefer.',hp:1.75,cov:.72,cost:.4},
  {n:'Betonstand',d:'Betonierte Stellung, hält auch schwerem Beschuss stand.',hp:2.3,cov:.6,cost:.6}];
-const fortOk=t=>!TD[t.type].obstacle;
+const fortOk=t=>!TD[t.type].obstacle&&t.type!=='jo';
 const fortCost=t=>Math.max(10,Math.round(TD[t.type].cost*FORT[(t.fort||0)+1].cost/5)*5);
 const _coverOf=coverOf;coverOf=function(t){return _coverOf(t)*(t.fort?FORT[t.fort].cov:1)};
 function fortBtn(t){if(!t||!fortOk(t))return'';const f=t.fort||0;if(f>=3)return'';const c=fortCost(t),F=FORT[f+1];
@@ -5365,6 +5365,57 @@ const _up114=update;update=function(dt){if(G){for(const b of BATS)if(b.zones&&b.
 const _bs114=buildStart;buildStart=function(){_bs114();const L=document.querySelector('#scenList section.camp2 .mlist');if(!L||L.querySelector('.xdem'))return;const b=document.createElement('button');b.className='mis next xdem';
   b.innerHTML='<span class="mn">★</span><span class="mt"><b>Demjansk · neue Gefechtsführung</b><small>Versuch · 10 Wellen · Wehrmacht</small></span><span class="ms">neu</span>';b.addEventListener('click',()=>{newGame('x_demjansk','de');radio('Versuch: zehn Wellen, der Gegner führt mit Plan. Achtet auf die Meldungen der Aufklärung.')});L.appendChild(b)};
 
+
+/* ===== Spezialeinheit „Johannes“: Kombi 1.9 TDI mit schwerem MG auf dem Dach, verlegbar ===== */
+TD.jo={cat:'Spezialeinheit · motorisiert',cost:210,range:4.3,rate:8,dmg:6.2,pen:3,ground:1,air:.7,kind:'direct',ammo:['std','apmg'],barrel:.4,rec:.02,thp:95};
+VAR.de.jo=[['Johannes','1.9 TDI · MG 42',7.92,{n:1,jacket:'slots',rate:1.3}]];
+VAR.su.jo=[['Johannes','1.9 TDI · DSchK 12,7 mm',12.7,{n:1,rate:.9}]];
+for(const s of['us','jp'])if(VAR[s])VAR[s].jo=VAR.de.jo;
+PENM.de.jo=[[8,3,1]];PENM.su.jo=[[20,12,1]];ROLE_IA.jo=[3,1];
+ORDER.push('jo');BGRP.splice(BGRP.length-1,0,{id:'jo',n:'Johannes',it:['jo']});
+const _cb_jo=canBuild;canBuild=function(type,x,y){if(type==='jo'&&!G.joMove&&G.towers.some(t=>t.type==='jo'))return'Johannes ist schon im Einsatz';return _cb_jo(type,x,y)};
+const _ss_jo=shotSound;shotSound=function(type,side,x,lvl){return _ss_jo(type==='jo'?'hmg':type,side,x,type==='jo'?(side==='de'?2:3):lvl)};
+// Kombi von oben, Front nach +x
+function drawCar(c){const body='#4a5462',dark='#232a32',glass='#1d2731',hl='#6c7888';
+  E(c,.04,.05,.5,.27,0,'rgba(0,0,0,.28)');
+  for(const[x,y]of[[.27,-.215],[.27,.215],[-.29,-.215],[-.29,.215]])box(c,x-.085,y-.035,.17,.07,'#141414',.02);
+  box(c,-.46,-.21,.92,.42,body,.1);box(c,-.44,-.19,.88,.38,sh(body,.06),.09);
+  P(c,[[.44,-.16],[.47,-.1],[.47,.1],[.44,.16]],sh(body,-.15));
+  box(c,.23,-.17,.2,.34,sh(body,.1),.06);
+  P(c,[[.22,-.17],[.1,-.15],[.1,.15],[.22,.17]],glass);P(c,[[.21,-.15],[.15,-.13],[.15,-.02]],'rgba(150,175,190,.35)');
+  box(c,-.33,-.15,.43,.3,sh(body,-.06),.04);
+  Ln(c,-.34,-.13,.1,-.13,'#a9b0b7',.018);Ln(c,-.34,.13,.1,.13,'#a9b0b7',.018);
+  P(c,[[-.34,-.15],[-.42,-.14],[-.42,.14],[-.34,.15]],glass);
+  for(const s of[-1,1]){P(c,[[.1,s*.15],[-.32,s*.15],[-.32,s*.19],[.08,s*.19]],dark);box(c,.11,s*.2-.02,.05,.04,dark,.01)}
+  box(c,.43,-.17,.035,.07,'#d9dde0',.01);box(c,.43,.1,.035,.07,'#d9dde0',.01);
+  box(c,-.475,-.17,.03,.06,'#8a2a22',.01);box(c,-.475,.11,.03,.06,'#8a2a22',.01);box(c,-.48,-.05,.02,.1,'#e8e8e2',.005);
+  C(c,-.02,0,.085,dark);C(c,-.02,0,.065,'#0e1114')}
+VAR.de.jo[0][3].m=undefined;
+const _db_jo=drawBase;drawBase=function(c,type,side,lvl){if(type==='jo')return;return _db_jo(c,type,side,lvl)};
+const _dg_jo=drawGun;drawGun=function(c,type,side,lvl){if(type!=='jo')return _dg_jo(c,type,side,lvl);const v=parOf(side,'jo',lvl);c.save();c.translate(-.02,0);
+  if(BB()){crew(c,[[-.05,0,0,'stand',.9]],side);C(c,0,0,.07,'#2b2f33');Ln(c,0,0,.1,0,'#2b2f33',.03)}
+  if(BG===null)mgBody(c,0,v,side,.26);else{if(BI(0))mgBody(c,0,v,side,.26,'bar');if(BB())mgBody(c,0,v,side,.26,'body')}c.restore()};
+const _dt_jo=drawTower;drawTower=function(c,t){if(t.type==='jo')blit(c,spr('jo-car',1.3,1.3,k=>drawCar(k)),t.cx,t.cy,t.hd==null?-Math.PI/2:t.hd);_dt_jo(c,t)};
+// Verlegen: antippen, Ziel antippen, Johannes fährt hin
+function joBusy(t){return t.drv||(t.moveCd||0)>G.t}
+const _sp_jo=selPanel;selPanel=function(t){let h=_sp_jo(t);if(t.type!=='jo')return h;const cd=Math.ceil((t.moveCd||0)-G.t),on=G.joMove===t;
+  const b=`<button class="act fortb" data-act="jomove" ${t.drv||cd>0?'disabled':''}><span class="t">${on?'Ziel antippen':'Verlegen'}</span><span class="n">${t.drv?'fährt …':cd>0?cd+' s':on?'Abbrechen':'kostenlos'}</span></button>`;
+  return h.replace('<button class="act sell"',b+'<button class="act sell"')};
+$('#tray').addEventListener('click',ev=>{const b=ev.target.closest('button[data-act="jomove"]');if(!b||!G||!G.sel||G.sel.type!=='jo')return;ev.stopPropagation();
+  G.joMove=G.joMove===G.sel?null:G.sel;if(G.joMove)toast('Johannes: Ziel auf der Karte antippen',true);renderTray()},true);
+const _tap_jo=tapAt;tapAt=function(cx,cy){const t=G&&G.joMove;if(!t||!G.towers.includes(t)){if(G)G.joMove=null;return _tap_jo(cx,cy)}
+  const r=cv.getBoundingClientRect(),gx=Math.floor((cx-r.left-view.ox)/view.s),gy=Math.floor((cy-r.top-view.oy)/view.s);
+  if(gx===t.x&&gy===t.y){G.joMove=null;renderTray();return}
+  const err=canBuild('jo',gx,gy);if(err){toast(err);return}
+  G.tmap.delete(t.x+','+t.y);t.x=gx;t.y=gy;G.tmap.set(gx+','+gy,t);const d=Math.hypot(gx+.5-t.cx,gy+.5-t.cy);
+  t.drv={x0:t.cx,y0:t.cy,x1:gx+.5,y1:gy+.5,k:0,T:Math.max(.6,Math.min(3.2,d/2.6))};t.hd=Math.atan2(gy+.5-t.cy,gx+.5-t.cx);t.fresh=false;
+  G.joMove=null;sfx('build');radio(['Johannes: Bin unterwegs.','Johannes: Verstanden, ich fahre rüber.','Johannes: Halt dich fest.'][Math.floor(Math.random()*3)]);renderTray()};
+const _up_jo=update;update=function(dt){_up_jo(dt);if(!G||G.over)return;for(const t of G.towers){if(t.type!=='jo'||!t.drv)continue;const D=t.drv;D.k+=dt/D.T;
+  const f=Math.min(1,D.k),e=f<.5?2*f*f:1-2*(1-f)*(1-f);t.cx=D.x0+(D.x1-D.x0)*e;t.cy=D.y0+(D.y1-D.y0)*e;t.cd=Math.max(t.cd,.25);
+  if(Math.random()<dt*14)part('smoke',t.cx-Math.cos(t.hd)*.48,t.cy-Math.sin(t.hd)*.48,.05,{col:'#2e2c2a',r:.08});
+  if(f>=1){t.cx=D.x1;t.cy=D.y1;t.drv=null;t.moveCd=G.t+12;if(G.sel===t)renderTray()}}};
+const _pt_jo=placeTower;placeTower=function(type,x,y){const t=_pt_jo(type,x,y);if(type==='jo'){t.hd=-Math.PI/2;radio('Johannes ist da. Kombi mit MG auf dem Dach, verlegbar.')}return t};
+const _ng_jo=newGame;newGame=function(...a){const r=_ng_jo(...a);if(G)G.joMove=null;return r};
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
 
 resize();buildStart();requestAnimationFrame(frame);
