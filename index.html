@@ -5401,27 +5401,40 @@ const _de_jo=drawEnemy;drawEnemy=function(c,e){_de_jo(c,e);if(e.k!=='jo'||e.dead
 // Johannes kommt einmal zur Mitte der Mission und noch einmal in der letzten Welle
 const _mw_jo=makeWave;makeWave=function(n){const L=_mw_jo(n);if(G&&G.scen!=='test'&&(n===Math.max(3,Math.round(MAXW*.45))||n===MAXW))L.push('jo');return L};
 const _pn_jo=prepNext;prepNext=function(){_pn_jo();if(G&&G.next&&G.next.includes('jo'))radio('Aufklärung: Ein einzelner Kombi mit MG auf dem Dach rollt an. Sie nennen ihn Johannes. Ihr werdet ihn hören, bevor ihr ihn seht.')};
-// Motor: 1.9 TDI Pumpe-Düse, Nageln und leises Turbopfeifen, als Schleife synthetisiert
-function genTDI(){const a=SND.ctx,sr=a.sampleRate,L=2,N=Math.floor(sr*L),buf=a.createBuffer(1,N,sr),d=buf.getChannelData(0);
-  let seed=1907;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647*2-1};
-  const f=64,per=sr/f,cyl=[1,.82,.94,.78];
-  for(let i=0;i<f*L;i++){const t0=Math.floor(i*per),amp=cyl[i%4]*(1+rnd()*.06);
-    // Verbrennung: dumpfer Stoß mit Obertönen
-    let nz=0;for(let j=0;j<Math.floor(sr*.035);j++){const t=j/sr,e=Math.exp(-t/.0075);nz+=(rnd()-nz)*.12;const v=e*(Math.sin(2*Math.PI*78*t)*.6+Math.sin(2*Math.PI*156*t)*.32+Math.sin(2*Math.PI*240*t)*.14+Math.sin(2*Math.PI*410*t)*.06)+e*nz*.5;d[(t0+j)%N]+=v*amp}
-    // Pumpe-Düse: hartes metallisches Klacken kurz vor der Zündung
-    const tk=t0-Math.floor(sr*.0042);for(let j=0;j<Math.floor(sr*.006);j++){const t=j/sr,e=Math.exp(-t/.0011),v=e*(rnd()*.18+Math.sin(2*Math.PI*1900*t)*.35+Math.sin(2*Math.PI*2850*t)*.6+Math.sin(2*Math.PI*4300*t)*.3);d[((tk+j)%N+N)%N]+=v*amp*.75}}
-  // Rauigkeit, Ventiltrieb und Turbopfeifen (ganzzahlige Perioden, damit die Schleife nahtlos ist)
-  let lp=0;for(let j=0;j<N;j++){const t=j/sr;lp+=(rnd()-lp)*.08;d[j]+=lp*.08+Math.sin(2*Math.PI*32*t)*.07;
-    const w=Math.sin(2*Math.PI*3600*t+.8*Math.sin(2*Math.PI*1.5*t));d[j]+=w*.03+Math.sin(2*Math.PI*7200*t)*.008}
-  let pk=0;for(let j=0;j<N;j++)pk=Math.max(pk,Math.abs(d[j]));for(let j=0;j<N;j++)d[j]=d[j]/pk*.9;return buf}
+// Motor: 1.9 TDI Pumpe-Düse. Zündstöße als Impulse durch Resonanzfilter (Block, Auspuff, Ventildeckel), dazu das Klacken der Pumpe-Düse-Elemente
+// und ein schmalbandiges Turborauschen. Zwei Schleifen (Leerlauf ~900/min, Last ~1900/min) werden je nach Fahrt überblendet.
+function bq(f,Q,sr){const w=2*Math.PI*f/sr,al=Math.sin(w)/(2*Q),a0=1+al;return{b0:al/a0,b2:-al/a0,a1:-2*Math.cos(w)/a0,a2:(1-al)/a0}}
+function bpass(x,f,Q,sr){const c=bq(f,Q,sr),y=new Float32Array(x.length);let x1=0,x2=0,y1=0,y2=0;for(let i=0;i<x.length;i++){const v=c.b0*x[i]+c.b2*x2-c.a1*y1-c.a2*y2;x2=x1;x1=x[i];y2=y1;y1=v;y[i]=v}return y}
+function lpass(x,f,sr){const k=1-Math.exp(-2*Math.PI*f/sr);let y=0;const o=new Float32Array(x.length);for(let i=0;i<x.length;i++){y+=(x[i]-y)*k;o[i]=y}return o}
+function genTDI(f,load){const a=SND.ctx,sr=a.sampleRate,L=2,N=Math.round(sr*L),M=N*3;let seed=1907+f;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647*2-1};
+  const ex=new Float32Array(M),ck=new Float32Array(M),nz=new Float32Array(M),cyc=Math.round(f*L),cyl=[1,.9,.97,.86],jt=[],ja=[];
+  for(let i=0;i<cyc;i++){jt.push(rnd()*.0005);ja.push(1+rnd()*.07)}
+  for(let r=0;r<3;r++)for(let i=0;i<cyc;i++){const t0=r*N+Math.round((i/f+jt[i])*sr),amp=cyl[i%4]*ja[i];
+    // Verbrennung: kurzer, harter Druckstoß und ein Hauch Rauschen
+    for(let j=0;j<Math.round(sr*.0016);j++){const q=j/(sr*.0016);if(t0+j<M)ex[t0+j]+=amp*Math.sin(Math.PI*q)*(1-q*.4)}
+    for(let j=0;j<Math.round(sr*.009);j++)if(t0+j<M)ex[t0+j]+=amp*.22*Math.exp(-j/(sr*.0025))*rnd();
+    // Pumpe-Düse: trockener Schlag kurz vor der Zündung
+    const tk=t0-Math.round(sr*(.0028+.0004*load));for(let j=0;j<Math.round(sr*.0007);j++)if(tk+j>=0&&tk+j<M)ck[tk+j]+=amp*(j<3?1:.5*rnd())*Math.exp(-j/(sr*.00018))}
+  for(let i=0;i<M;i++)nz[i]=rnd();
+  const body=bpass(ex,118,1.1,sr),exh=bpass(ex,62,1.4,sr),mid=bpass(ex,430,2.2,sr),harsh=bpass(ex,1150,3.2,sr);
+  const c1=bpass(ck,2350,7,sr),c2=bpass(ck,3650,9,sr),c3=bpass(ck,1600,5,sr);
+  const tb=bpass(nz,4200+1800*load,22,sr),ru=lpass(nz,180,sr);
+  const env=lpass(Float32Array.from(ex,v=>Math.abs(v)),25,sr);
+  const out=new Float32Array(N);let pk=0;
+  for(let i=0;i<N;i++){const k=i+N;let v=body[k]*1.0+exh[k]*.8+mid[k]*.45+harsh[k]*(.16+.12*load)+(c1[k]*2.6+c2[k]*1.7+c3[k]*1.3)*(1-.35*load)+tb[k]*(.004+.03*load)+ru[k]*env[k]*1.4;
+    v=Math.tanh(v*1.6);out[i]=v;pk=Math.max(pk,Math.abs(v))}
+  const buf=a.createBuffer(1,N,sr),d=buf.getChannelData(0);const g=lpass(out,7000,sr);for(let i=0;i<N;i++)d[i]=g[i]/pk*.85;return buf}
 let JOS=null;
-function joSound(dt){if(!ready()||!SND.on){if(JOS){try{JOS.s.stop()}catch(e){}JOS=null}return}
+function joSound(dt){if(!ready()||!SND.on){if(JOS){try{JOS.a.s.stop();JOS.b.s.stop()}catch(e){}JOS=null}return}
   const e=G&&!G.over&&G.enemies.find(q=>q.k==='jo'&&!q.dead),a=SND.ctx,now=a.currentTime;
-  if(e&&!G.paused){if(!JOS){const s=a.createBufferSource(),g=a.createGain(),p=a.createStereoPanner?a.createStereoPanner():null,lp=a.createBiquadFilter();
-      s.buffer=SND.buf.tdi||(SND.buf.tdi=genTDI());s.loop=true;lp.type='lowpass';lp.frequency.value=9000;g.gain.value=0;s.connect(lp);lp.connect(g);let n=g;if(p){g.connect(p);n=p}n.connect(SND.master);const w=a.createGain();w.gain.value=.12;n.connect(w);w.connect(SND.rev);s.start();JOS={s,g,p,lp,x:e.x,y:e.y}}
-    const mv=Math.hypot(e.x-JOS.x,e.y-JOS.y)/Math.max(dt,1e-3);JOS.x=e.x;JOS.y=e.y;const load=Math.min(1,mv/1.2);
-    JOS.s.playbackRate.setTargetAtTime((.58+.5*load)*(G.speed>1?1.08:1),now,.35);JOS.g.gain.setTargetAtTime(.34,now,.25);if(JOS.p)JOS.p.pan.setTargetAtTime(panOf(e.x),now,.1);JOS.lp.frequency.setTargetAtTime(3500+6000*load,now,.3)}
-  else if(JOS){JOS.g.gain.setTargetAtTime(0,now,.25);const o=JOS;JOS=null;setTimeout(()=>{try{o.s.stop()}catch(e){}},1500)}}
+  if(e&&!G.paused){if(!JOS){const out=a.createGain(),p=a.createStereoPanner?a.createStereoPanner():null;out.gain.value=0;let n=out;if(p){out.connect(p);n=p}n.connect(SND.master);const w=a.createGain();w.gain.value=.1;n.connect(w);w.connect(SND.rev);
+      const mk=(buf)=>{const s=a.createBufferSource(),g=a.createGain();s.buffer=buf;s.loop=true;g.gain.value=0;s.connect(g);g.connect(out);s.start();return{s,g}};
+      JOS={out,p,a:mk(SND.buf.tdi0||(SND.buf.tdi0=genTDI(30,0))),b:mk(SND.buf.tdi1||(SND.buf.tdi1=genTDI(62,1))),x:e.x,y:e.y,ld:0}}
+    const mv=Math.hypot(e.x-JOS.x,e.y-JOS.y)/Math.max(dt,1e-3);JOS.x=e.x;JOS.y=e.y;JOS.ld+=(Math.min(1,mv/1.1)-JOS.ld)*Math.min(1,dt*2.5);const l=JOS.ld;
+    JOS.a.g.gain.setTargetAtTime(Math.cos(l*Math.PI/2),now,.15);JOS.b.g.gain.setTargetAtTime(Math.sin(l*Math.PI/2),now,.15);
+    JOS.a.s.playbackRate.setTargetAtTime(.97+.25*l,now,.3);JOS.b.s.playbackRate.setTargetAtTime(.8+.2*l,now,.3);
+    JOS.out.gain.setTargetAtTime(.42,now,.3);if(JOS.p)JOS.p.pan.setTargetAtTime(panOf(e.x),now,.1)}
+  else if(JOS){JOS.out.gain.setTargetAtTime(0,now,.3);const o=JOS;JOS=null;setTimeout(()=>{try{o.a.s.stop();o.b.s.stop()}catch(e){}},1800)}}
 const _up_jo=update;update=function(dt){_up_jo(dt);try{joSound(dt)}catch(e){}};
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
 
