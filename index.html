@@ -5399,8 +5399,8 @@ const _dg_jo=drawGun;drawGun=function(c,type,side,lvl){if(type!=='jo')return _dg
 const _de_jo=drawEnemy;drawEnemy=function(c,e){_de_jo(c,e);if(e.k!=='jo'||e.dead)return;const side=G.enemy;
   blit(c,spr('jo-g'+side,.75,.75,k=>{k.scale(.5,.5);BG=null;drawGun(k,'jo',side,1)}),e.x-Math.cos(e.ang)*.01,e.y-Math.sin(e.ang)*.01,e.tAng??e.ang)};
 // Johannes kommt einmal zur Mitte der Mission und noch einmal in der letzten Welle
-const _mw_jo=makeWave;makeWave=function(n){const L=_mw_jo(n);if(G&&G.scen!=='test'&&(n===Math.max(3,Math.round(MAXW*.45))||n===MAXW))L.push('jo');return L};
-const _pn_jo=prepNext;prepNext=function(){_pn_jo();if(G&&G.next&&G.next.includes('jo'))radio('Aufklärung: Ein einzelner Kombi mit MG auf dem Dach rollt an. Sie nennen ihn Johannes. Ihr werdet ihn hören, bevor ihr ihn seht.')};
+const _mw_jo=makeWave;makeWave=function(n){const L=_mw_jo(n);if(!G)return L;if(G.scen==='test'){L.unshift('jo');return L}if(n===Math.max(3,Math.round(MAXW*.45))||n===MAXW)L.push('jo');return L};
+const _pn_jo=prepNext;prepNext=function(){_pn_jo();if(G&&G.next&&G.next.includes('jo')&&!(G.scen==='test'&&G.joSaid)&&(G.joSaid=1))radio('Aufklärung: Ein einzelner Kombi mit MG auf dem Dach rollt an. Sie nennen ihn Johannes. Ihr werdet ihn hören, bevor ihr ihn seht.')};
 // Motor: 1.9 TDI Pumpe-Düse. Zündstöße als Impulse durch Resonanzfilter (Block, Auspuff, Ventildeckel), dazu das Klacken der Pumpe-Düse-Elemente
 // und ein schmalbandiges Turborauschen. Zwei Schleifen (Leerlauf ~900/min, Last ~1900/min) werden je nach Fahrt überblendet.
 function bq(f,Q,sr){const w=2*Math.PI*f/sr,al=Math.sin(w)/(2*Q),a0=1+al;return{b0:al/a0,b2:-al/a0,a1:-2*Math.cos(w)/a0,a2:(1-al)/a0}}
