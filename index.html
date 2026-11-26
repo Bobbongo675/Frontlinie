@@ -4666,7 +4666,7 @@ const FORT=[null,
  {n:'Sandsäcke',d:'Ein Ring aus Sandsäcken.',hp:1.35,cov:.85,cost:.25},
  {n:'Eingegraben',d:'Erdwall mit Holzverstärkung, die Waffe steht tiefer.',hp:1.75,cov:.72,cost:.4},
  {n:'Betonstand',d:'Betonierte Stellung, hält auch schwerem Beschuss stand.',hp:2.3,cov:.6,cost:.6}];
-const fortOk=t=>!TD[t.type].obstacle&&t.type!=='jo';
+const fortOk=t=>!TD[t.type].obstacle;
 const fortCost=t=>Math.max(10,Math.round(TD[t.type].cost*FORT[(t.fort||0)+1].cost/5)*5);
 const _coverOf=coverOf;coverOf=function(t){return _coverOf(t)*(t.fort?FORT[t.fort].cov:1)};
 function fortBtn(t){if(!t||!fortOk(t))return'';const f=t.fort||0;if(f>=3)return'';const c=fortCost(t),F=FORT[f+1];
@@ -5366,17 +5366,18 @@ const _bs114=buildStart;buildStart=function(){_bs114();const L=document.querySel
   b.innerHTML='<span class="mn">★</span><span class="mt"><b>Demjansk · neue Gefechtsführung</b><small>Versuch · 10 Wellen · Wehrmacht</small></span><span class="ms">neu</span>';b.addEventListener('click',()=>{newGame('x_demjansk','de');radio('Versuch: zehn Wellen, der Gegner führt mit Plan. Achtet auf die Meldungen der Aufklärung.')});L.appendChild(b)};
 
 
-/* ===== Spezialeinheit „Johannes“: Kombi 1.9 TDI mit schwerem MG auf dem Dach, verlegbar ===== */
-TD.jo={cat:'Spezialeinheit · motorisiert',cost:210,range:4.3,rate:8,dmg:6.2,pen:3,ground:1,air:.7,kind:'direct',ammo:['std','apmg'],barrel:.4,rec:.02,thp:95};
+
+/* ===== Gegner „Johannes“: Kombi 1.9 TDI mit schwerem MG auf dem Dach, behelfsmäßig gepanzert ===== */
 VAR.de.jo=[['Johannes','1.9 TDI · MG 42',7.92,{n:1,jacket:'slots',rate:1.3}]];
 VAR.su.jo=[['Johannes','1.9 TDI · DSchK 12,7 mm',12.7,{n:1,rate:.9}]];
 for(const s of['us','jp'])if(VAR[s])VAR[s].jo=VAR.de.jo;
-PENM.de.jo=[[8,3,1]];PENM.su.jo=[[20,12,1]];ROLE_IA.jo=[3,1];
-ORDER.push('jo');BGRP.splice(BGRP.length-1,0,{id:'jo',n:'Johannes',it:['jo']});
-const _cb_jo=canBuild;canBuild=function(type,x,y){if(type==='jo'&&!G.joMove&&G.towers.some(t=>t.type==='jo'))return'Johannes ist schon im Einsatz';return _cb_jo(type,x,y)};
-const _ss_jo=shotSound;shotSound=function(type,side,x,lvl){return _ss_jo(type==='jo'?'hmg':type,side,x,type==='jo'?(side==='de'?2:3):lvl)};
-// Kombi von oben, Front nach +x
-function drawCar(c){const body='#4a5462',dark='#232a32',glass='#1d2731',hl='#6c7888';
+ED.jo={hp:380,spd:1.45,arm:3,rew:60,lives:3,pts:40,veh:1,tank:1,L:.44,W:.22,atk:14,gap:1.6,wpn:{w:'mg',r:2.9,rate:4.6,dmg:2.6}};
+UNLOCK.jo=99;for(const s in UNAMES)UNAMES[s].jo='Johannes';
+ARMM.de.jo=[12,8,8];ARMM.su.jo=[12,8,8];HPM.de.jo=380;HPM.su.jo=380;
+ENDESC.jo='Ein Kombi, 1.9 TDI, mit Stahlplatten verkleidet und einem schweren MG auf dem Dach. Schnell, wendig und laut. Gewehrkugeln prallen ab, ab 2 cm geht er durch.';
+for(const s in VSPEC)VSPEC[s].jo={k:'jo',L:.46,W:.24};
+// Kombi von oben, Front nach +x (eigener Name, die allgemeine drawCar zeichnet Kübelwagen und BA-64)
+function drawJoCar(c){const body='#4a5462',dark='#232a32',glass='#1d2731';
   E(c,.04,.05,.5,.27,0,'rgba(0,0,0,.28)');
   for(const[x,y]of[[.27,-.215],[.27,.215],[-.29,-.215],[-.29,.215]])box(c,x-.085,y-.035,.17,.07,'#141414',.02);
   box(c,-.46,-.21,.92,.42,body,.1);box(c,-.44,-.19,.88,.38,sh(body,.06),.09);
@@ -5389,33 +5390,39 @@ function drawCar(c){const body='#4a5462',dark='#232a32',glass='#1d2731',hl='#6c7
   for(const s of[-1,1]){P(c,[[.1,s*.15],[-.32,s*.15],[-.32,s*.19],[.08,s*.19]],dark);box(c,.11,s*.2-.02,.05,.04,dark,.01)}
   box(c,.43,-.17,.035,.07,'#d9dde0',.01);box(c,.43,.1,.035,.07,'#d9dde0',.01);
   box(c,-.475,-.17,.03,.06,'#8a2a22',.01);box(c,-.475,.11,.03,.06,'#8a2a22',.01);box(c,-.48,-.05,.02,.1,'#e8e8e2',.005);
+  for(const s of[-1,1])box(c,-.2,s*.205-.012,.3,.024,'#6d6f66',.004);
   C(c,-.02,0,.085,dark);C(c,-.02,0,.065,'#0e1114')}
-VAR.de.jo[0][3].m=undefined;
-const _db_jo=drawBase;drawBase=function(c,type,side,lvl){if(type==='jo')return;return _db_jo(c,type,side,lvl)};
+V2.jo=(c,v,side,sd)=>{c.save();c.scale(.5,.5);drawJoCar(c);c.restore()};
 const _dg_jo=drawGun;drawGun=function(c,type,side,lvl){if(type!=='jo')return _dg_jo(c,type,side,lvl);const v=parOf(side,'jo',lvl);c.save();c.translate(-.02,0);
   if(BB()){crew(c,[[-.05,0,0,'stand',.9]],side);C(c,0,0,.07,'#2b2f33');Ln(c,0,0,.1,0,'#2b2f33',.03)}
   if(BG===null)mgBody(c,0,v,side,.26);else{if(BI(0))mgBody(c,0,v,side,.26,'bar');if(BB())mgBody(c,0,v,side,.26,'body')}c.restore()};
-const _dt_jo=drawTower;drawTower=function(c,t){if(t.type==='jo')blit(c,spr('jo-car',1.3,1.3,k=>drawCar(k)),t.cx,t.cy,t.hd==null?-Math.PI/2:t.hd);_dt_jo(c,t)};
-// Verlegen: antippen, Ziel antippen, Johannes fährt hin
-function joBusy(t){return t.drv||(t.moveCd||0)>G.t}
-const _sp_jo=selPanel;selPanel=function(t){let h=_sp_jo(t);if(t.type!=='jo')return h;const cd=Math.ceil((t.moveCd||0)-G.t),on=G.joMove===t;
-  const b=`<button class="act fortb" data-act="jomove" ${t.drv||cd>0?'disabled':''}><span class="t">${on?'Ziel antippen':'Verlegen'}</span><span class="n">${t.drv?'fährt …':cd>0?cd+' s':on?'Abbrechen':'kostenlos'}</span></button>`;
-  return h.replace('<button class="act sell"',b+'<button class="act sell"')};
-$('#tray').addEventListener('click',ev=>{const b=ev.target.closest('button[data-act="jomove"]');if(!b||!G||!G.sel||G.sel.type!=='jo')return;ev.stopPropagation();
-  G.joMove=G.joMove===G.sel?null:G.sel;if(G.joMove)toast('Johannes: Ziel auf der Karte antippen',true);renderTray()},true);
-const _tap_jo=tapAt;tapAt=function(cx,cy){const t=G&&G.joMove;if(!t||!G.towers.includes(t)){if(G)G.joMove=null;return _tap_jo(cx,cy)}
-  const r=cv.getBoundingClientRect(),gx=Math.floor((cx-r.left-view.ox)/view.s),gy=Math.floor((cy-r.top-view.oy)/view.s);
-  if(gx===t.x&&gy===t.y){G.joMove=null;renderTray();return}
-  const err=canBuild('jo',gx,gy);if(err){toast(err);return}
-  G.tmap.delete(t.x+','+t.y);t.x=gx;t.y=gy;G.tmap.set(gx+','+gy,t);const d=Math.hypot(gx+.5-t.cx,gy+.5-t.cy);
-  t.drv={x0:t.cx,y0:t.cy,x1:gx+.5,y1:gy+.5,k:0,T:Math.max(.6,Math.min(3.2,d/2.6))};t.hd=Math.atan2(gy+.5-t.cy,gx+.5-t.cx);t.fresh=false;
-  G.joMove=null;sfx('build');radio(['Johannes: Bin unterwegs.','Johannes: Verstanden, ich fahre rüber.','Johannes: Halt dich fest.'][Math.floor(Math.random()*3)]);renderTray()};
-const _up_jo=update;update=function(dt){_up_jo(dt);if(!G||G.over)return;for(const t of G.towers){if(t.type!=='jo'||!t.drv)continue;const D=t.drv;D.k+=dt/D.T;
-  const f=Math.min(1,D.k),e=f<.5?2*f*f:1-2*(1-f)*(1-f);t.cx=D.x0+(D.x1-D.x0)*e;t.cy=D.y0+(D.y1-D.y0)*e;t.cd=Math.max(t.cd,.25);
-  if(Math.random()<dt*14)part('smoke',t.cx-Math.cos(t.hd)*.48,t.cy-Math.sin(t.hd)*.48,.05,{col:'#2e2c2a',r:.08});
-  if(f>=1){t.cx=D.x1;t.cy=D.y1;t.drv=null;t.moveCd=G.t+12;if(G.sel===t)renderTray()}}};
-const _pt_jo=placeTower;placeTower=function(type,x,y){const t=_pt_jo(type,x,y);if(type==='jo'){t.hd=-Math.PI/2;radio('Johannes ist da. Kombi mit MG auf dem Dach, verlegbar.')}return t};
-const _ng_jo=newGame;newGame=function(...a){const r=_ng_jo(...a);if(G)G.joMove=null;return r};
+const _de_jo=drawEnemy;drawEnemy=function(c,e){_de_jo(c,e);if(e.k!=='jo'||e.dead)return;const side=G.enemy;
+  blit(c,spr('jo-g'+side,.75,.75,k=>{k.scale(.5,.5);BG=null;drawGun(k,'jo',side,1)}),e.x-Math.cos(e.ang)*.01,e.y-Math.sin(e.ang)*.01,e.tAng??e.ang)};
+// Johannes kommt einmal zur Mitte der Mission und noch einmal in der letzten Welle
+const _mw_jo=makeWave;makeWave=function(n){const L=_mw_jo(n);if(G&&G.scen!=='test'&&(n===Math.max(3,Math.round(MAXW*.45))||n===MAXW))L.push('jo');return L};
+const _pn_jo=prepNext;prepNext=function(){_pn_jo();if(G&&G.next&&G.next.includes('jo'))radio('Aufklärung: Ein einzelner Kombi mit MG auf dem Dach rollt an. Sie nennen ihn Johannes. Ihr werdet ihn hören, bevor ihr ihn seht.')};
+// Motor: 1.9 TDI Pumpe-Düse, Nageln und leises Turbopfeifen, als Schleife synthetisiert
+function genTDI(){const a=SND.ctx,sr=a.sampleRate,L=2,N=Math.floor(sr*L),buf=a.createBuffer(1,N,sr),d=buf.getChannelData(0);
+  let seed=1907;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647*2-1};
+  const f=64,per=sr/f,cyl=[1,.82,.94,.78];
+  for(let i=0;i<f*L;i++){const t0=Math.floor(i*per),amp=cyl[i%4]*(1+rnd()*.06);
+    // Verbrennung: dumpfer Stoß mit Obertönen
+    let nz=0;for(let j=0;j<Math.floor(sr*.035);j++){const t=j/sr,e=Math.exp(-t/.0075);nz+=(rnd()-nz)*.12;const v=e*(Math.sin(2*Math.PI*78*t)*.6+Math.sin(2*Math.PI*156*t)*.32+Math.sin(2*Math.PI*240*t)*.14+Math.sin(2*Math.PI*410*t)*.06)+e*nz*.5;d[(t0+j)%N]+=v*amp}
+    // Pumpe-Düse: hartes metallisches Klacken kurz vor der Zündung
+    const tk=t0-Math.floor(sr*.0042);for(let j=0;j<Math.floor(sr*.006);j++){const t=j/sr,e=Math.exp(-t/.0011),v=e*(rnd()*.18+Math.sin(2*Math.PI*1900*t)*.35+Math.sin(2*Math.PI*2850*t)*.6+Math.sin(2*Math.PI*4300*t)*.3);d[((tk+j)%N+N)%N]+=v*amp*.75}}
+  // Rauigkeit, Ventiltrieb und Turbopfeifen (ganzzahlige Perioden, damit die Schleife nahtlos ist)
+  let lp=0;for(let j=0;j<N;j++){const t=j/sr;lp+=(rnd()-lp)*.08;d[j]+=lp*.08+Math.sin(2*Math.PI*32*t)*.07;
+    const w=Math.sin(2*Math.PI*3600*t+.8*Math.sin(2*Math.PI*1.5*t));d[j]+=w*.03+Math.sin(2*Math.PI*7200*t)*.008}
+  let pk=0;for(let j=0;j<N;j++)pk=Math.max(pk,Math.abs(d[j]));for(let j=0;j<N;j++)d[j]=d[j]/pk*.9;return buf}
+let JOS=null;
+function joSound(dt){if(!ready()||!SND.on){if(JOS){try{JOS.s.stop()}catch(e){}JOS=null}return}
+  const e=G&&!G.over&&G.enemies.find(q=>q.k==='jo'&&!q.dead),a=SND.ctx,now=a.currentTime;
+  if(e&&!G.paused){if(!JOS){const s=a.createBufferSource(),g=a.createGain(),p=a.createStereoPanner?a.createStereoPanner():null,lp=a.createBiquadFilter();
+      s.buffer=SND.buf.tdi||(SND.buf.tdi=genTDI());s.loop=true;lp.type='lowpass';lp.frequency.value=9000;g.gain.value=0;s.connect(lp);lp.connect(g);let n=g;if(p){g.connect(p);n=p}n.connect(SND.master);const w=a.createGain();w.gain.value=.12;n.connect(w);w.connect(SND.rev);s.start();JOS={s,g,p,lp,x:e.x,y:e.y}}
+    const mv=Math.hypot(e.x-JOS.x,e.y-JOS.y)/Math.max(dt,1e-3);JOS.x=e.x;JOS.y=e.y;const load=Math.min(1,mv/1.2);
+    JOS.s.playbackRate.setTargetAtTime((.58+.5*load)*(G.speed>1?1.08:1),now,.35);JOS.g.gain.setTargetAtTime(.34,now,.25);if(JOS.p)JOS.p.pan.setTargetAtTime(panOf(e.x),now,.1);JOS.lp.frequency.setTargetAtTime(3500+6000*load,now,.3)}
+  else if(JOS){JOS.g.gain.setTargetAtTime(0,now,.25);const o=JOS;JOS=null;setTimeout(()=>{try{o.s.stop()}catch(e){}},1500)}}
+const _up_jo=update;update=function(dt){_up_jo(dt);try{joSound(dt)}catch(e){}};
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
 
 resize();buildStart();requestAnimationFrame(frame);
