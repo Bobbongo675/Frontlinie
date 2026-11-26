@@ -5435,6 +5435,22 @@ function joSound(dt){if(!ready()||!SND.on){if(JOS){try{JOS.a.s.stop();JOS.b.s.st
     JOS.a.s.playbackRate.setTargetAtTime(.97+.25*l,now,.3);JOS.b.s.playbackRate.setTargetAtTime(.8+.2*l,now,.3);
     JOS.out.gain.setTargetAtTime(.42,now,.3);if(JOS.p)JOS.p.pan.setTargetAtTime(panOf(e.x),now,.1)}
   else if(JOS){JOS.out.gain.setTargetAtTime(0,now,.3);const o=JOS;JOS=null;setTimeout(()=>{try{o.a.s.stop();o.b.s.stop()}catch(e){}},1800)}}
+// Hörprobe im Startbildschirm: Leerlauf, Gasstoß, Fahrt, ausrollen
+let joDemoT=null;
+function joDemo(btn){audioInit();const go=()=>{if(!ready()){btn.querySelector('small').textContent='Ton ist aus oder vom Gerät blockiert. Stummschalter am iPhone prüfen.';return}
+  const a=SND.ctx,now=a.currentTime,out=a.createGain();out.connect(SND.master);const w=a.createGain();w.gain.value=.1;out.connect(w);w.connect(SND.rev);
+  const A=SND.buf.tdi0||(SND.buf.tdi0=genTDI(30,0)),B=SND.buf.tdi1||(SND.buf.tdi1=genTDI(62,1));
+  const mk=(buf)=>{const s=a.createBufferSource(),g=a.createGain();s.buffer=buf;s.loop=true;s.connect(g);g.connect(out);s.start(now);s.stop(now+11);return{s,g}};const x=mk(A),y=mk(B);
+  out.gain.setValueAtTime(0,now);out.gain.linearRampToValueAtTime(.5,now+.4);out.gain.setValueAtTime(.5,now+9.6);out.gain.linearRampToValueAtTime(0,now+10.8);
+  // Leerlauf 3 s, kurzer Gasstoß, wieder Leerlauf, dann Anfahren und Fahrt, am Ende ausrollen
+  const L=[[0,0],[3,0],[3.35,1],[3.9,1],[4.6,0],[6,0],[7,1],[8.8,1],[9.8,.2]];
+  for(const[t,l]of L){const ga=Math.cos(l*Math.PI/2),gb=Math.sin(l*Math.PI/2);x.g.gain.linearRampToValueAtTime(ga,now+t);y.g.gain.linearRampToValueAtTime(gb,now+t);x.s.playbackRate.linearRampToValueAtTime(.97+.25*l,now+t);y.s.playbackRate.linearRampToValueAtTime(.8+.2*l,now+t)}
+  x.g.gain.setValueAtTime(1,now);y.g.gain.setValueAtTime(0,now);
+  btn.disabled=true;btn.querySelector('small').textContent='Leerlauf … Gasstoß … Fahrt';clearTimeout(joDemoT);joDemoT=setTimeout(()=>{btn.disabled=false;btn.querySelector('small').textContent='Noch einmal anhören'},11000)};
+  if(SND.ctx&&SND.ctx.state!=='running')SND.ctx.resume().then(go).catch(go);else go()}
+{const opt=$('#optDev')&&$('#optDev').closest('label');if(opt){const b=document.createElement('button');b.className='opt jodemo';b.type='button';
+  b.innerHTML='<span><b>▶ Johannes anhören</b><small>1.9 TDI Pumpe-Düse: Leerlauf, Gasstoß, Fahrt (11 s)</small></span>';b.addEventListener('click',()=>joDemo(b));opt.after(b);
+  const st=document.createElement('style');st.textContent='.jodemo{display:flex;width:100%;text-align:left;background:var(--panel);border:1px solid var(--line);color:inherit;font:inherit;cursor:pointer}.jodemo span{display:flex;flex-direction:column;gap:2px}.jodemo:disabled{opacity:.7}';document.head.appendChild(st)}}
 const _up_jo=update;update=function(dt){_up_jo(dt);try{joSound(dt)}catch(e){}};
 Object.assign(window,{regAt,special,onKill,updFixed,onLeak,onWaveEnd,canSee});
 
